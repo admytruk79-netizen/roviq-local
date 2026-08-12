@@ -1,0 +1,10 @@
+{
+  "name": "Roviq Local",
+  "short_name": "Roviq Local",
+  "description": "A driver's curated guide to Portland, OR.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F3EEE3",
+  "theme_color": "#1B3B2F",
+  "icons": []
+}

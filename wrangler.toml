@@ -1,0 +1,16 @@
+name = "roviq-local"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "roviq-local"
+database_id = "9a594b6c-0e35-4417-afbc-d072166b3e98"
+
+# Secrets (set via `wrangler pages secret put <NAME>` or the Cloudflare dashboard,
+# Pages project -> Settings -> Environment variables. Never commit real values.):
+#   ADMIN_PASSCODE      shared curator passcode for the /admin queue
+#
+# Environment variables (Pages dashboard -> Settings -> Environment variables,
+# plain text is fine since the Mapbox token below is a public, domain-restricted token):
+#   MAPBOX_TOKEN        public Mapbox access token, restricted to your Pages domain

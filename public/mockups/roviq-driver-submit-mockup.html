@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roviq Local — Driver Submission &amp; Approval</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --fir:#1B3B2F; --fir-deep:#0F2822; --mist:#7C93A3; --mist-soft:#C7D2D6;
+    --brass:#C98A3D; --brass-soft:#E4B978; --paper:#F3EEE3; --paper-warm:#EDE4D2;
+    --ink:#1A1A16; --ink-soft:#5B5A52; --ok:#3F7A4F; --no:#B5502F;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh;
+    background:
+      radial-gradient(circle at 20% 10%, #24493a 0%, transparent 45%),
+      radial-gradient(circle at 80% 90%, #1a3428 0%, transparent 40%),
+      var(--fir-deep);
+    display:flex; flex-wrap:wrap; gap:32px; align-items:flex-start; justify-content:center;
+    padding:60px 16px 40px; font-family:'Inter',sans-serif;
+  }
+  .stage-label{
+    position:fixed; top:18px; left:50%; transform:translateX(-50%);
+    color:var(--mist-soft); font-family:'IBM Plex Mono',monospace;
+    font-size:11px; letter-spacing:.14em; text-transform:uppercase; opacity:.6;
+  }
+  .col-label{
+    width:375px; text-align:center; color:var(--brass-soft);
+    font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.1em;
+    text-transform:uppercase; margin-bottom:10px;
+  }
+  .phone{
+    width:375px; height:780px; background:var(--ink); border-radius:46px; padding:14px;
+    box-shadow:0 40px 80px -20px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.05);
+    position:relative;
+  }
+  .screen{
+    width:100%; height:100%; background:var(--paper); border-radius:34px;
+    overflow:hidden; position:relative; display:flex; flex-direction:column;
+  }
+  .notch{
+    position:absolute; top:14px; left:50%; transform:translateX(-50%);
+    width:120px; height:26px; background:var(--ink); border-radius:14px; z-index:50;
+  }
+  .statusbar{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:16px 26px 4px; font-size:13px; font-weight:600; color:var(--fir);
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .topbar{
+    display:flex; align-items:center; gap:12px; padding:10px 20px 16px;
+  }
+  .back{
+    width:32px; height:32px; border-radius:50%; background:var(--paper-warm);
+    display:flex; align-items:center; justify-content:center; color:var(--fir); font-size:16px;
+  }
+  .topbar h1{
+    font-family:'Fraunces',serif; font-weight:600; font-size:18px; color:var(--fir); margin:0;
+  }
+
+  /* FORM (screen A) */
+  .form-body{ padding:0 20px 20px; flex:1; overflow-y:auto; }
+  .field{ margin-bottom:16px; }
+  .field label{
+    display:block; font-family:'IBM Plex Mono',monospace; font-size:10.5px;
+    letter-spacing:.05em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:6px;
+  }
+  .field input, .field textarea, .field select{
+    width:100%; border:1.5px solid rgba(27,59,47,.18); border-radius:12px;
+    padding:11px 13px; font-family:'Inter',sans-serif; font-size:14px; color:var(--ink);
+    background:#fff;
+  }
+  .field textarea{ resize:none; height:64px; }
+  .cat-pills{ display:flex; gap:8px; flex-wrap:wrap; }
+  .cat-pill{
+    padding:7px 12px; border-radius:100px; font-size:12px; font-weight:600;
+    border:1.5px solid rgba(27,59,47,.18); background:#fff; color:var(--fir);
+  }
+  .cat-pill.sel{ background:var(--fir); color:var(--paper); border-color:var(--fir); }
+  .photo-drop{
+    border:1.5px dashed rgba(27,59,47,.3); border-radius:14px; padding:22px;
+    text-align:center; color:var(--ink-soft); font-size:12.5px;
+  }
+  .photo-drop span{ display:block; font-size:22px; margin-bottom:6px; }
+  .submit-note{
+    font-size:11px; color:var(--ink-soft); text-align:center; margin-top:6px; line-height:1.5;
+  }
+  .btn{
+    width:100%; text-align:center; padding:13px; border-radius:12px;
+    font-size:14px; font-weight:600; cursor:pointer; border:none; font-family:'Inter',sans-serif;
+  }
+  .btn-primary{ background:var(--fir); color:var(--paper); }
+
+  /* ADMIN (screen B) */
+  .admin-header{
+    padding:6px 20px 12px;
+  }
+  .admin-title{ font-family:'Fraunces',serif; font-weight:600; font-size:20px; color:var(--fir); }
+  .admin-sub{ font-size:11.5px; color:var(--ink-soft); margin-top:2px; }
+  .queue-count{
+    display:inline-flex; align-items:center; gap:5px; margin-top:8px;
+    font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--brass);
+    background:#FBF1E0; padding:4px 10px; border-radius:100px;
+  }
+  .queue{ flex:1; overflow-y:auto; padding:6px 20px 20px; display:flex; flex-direction:column; gap:12px; }
+  .review-card{
+    background:#fff; border-radius:16px; padding:14px; box-shadow:0 4px 14px rgba(27,59,47,.08);
+    border:1px solid rgba(27,59,47,.08);
+  }
+  .rc-top{ display:flex; gap:10px; }
+  .rc-photo{
+    width:52px; height:52px; border-radius:12px; flex:0 0 auto;
+    background:linear-gradient(135deg,var(--brass-soft),var(--brass));
+    display:flex; align-items:center; justify-content:center; font-size:22px;
+  }
+  .rc-info{ flex:1; min-width:0; }
+  .rc-name{ font-family:'Fraunces',serif; font-weight:600; font-size:15px; color:var(--fir); }
+  .rc-meta{
+    font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:var(--ink-soft);
+    text-transform:uppercase; letter-spacing:.04em; margin-top:2px;
+  }
+  .rc-desc{ font-size:12px; color:var(--ink-soft); margin-top:8px; line-height:1.45; }
+  .rc-driver{
+    font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--mist);
+    margin-top:8px;
+  }
+  .rc-actions{ display:flex; gap:8px; margin-top:12px; }
+  .rc-btn{
+    flex:1; text-align:center; padding:9px; border-radius:10px;
+    font-size:12.5px; font-weight:600; cursor:pointer; border:none; font-family:'Inter',sans-serif;
+  }
+  .rc-approve{ background:var(--ok); color:#fff; }
+  .rc-reject{ background:#fff; color:var(--no); border:1.5px solid rgba(181,80,47,.3); }
+</style>
+</head>
+<body>
+<div class="stage-label">Roviq Local — Driver Submission &amp; Curator Approval</div>
+
+<div>
+  <div class="col-label">🚗 Driver submits a spot</div>
+  <div class="phone">
+    <div class="screen">
+      <div class="notch"></div>
+      <div class="statusbar"><span>9:41</span><span>●●●  🛜  🔋</span></div>
+      <div class="topbar">
+        <div class="back">←</div>
+        <h1>Suggest a spot</h1>
+      </div>
+      <div class="form-body">
+        <div class="field">
+          <label>Name</label>
+          <input type="text" placeholder="e.g. Kray's Coffee" value="Kray's Coffee">
+        </div>
+        <div class="field">
+          <label>Category</label>
+          <div class="cat-pills">
+            <div class="cat-pill">🌮 Food</div>
+            <div class="cat-pill sel">☕ Coffee</div>
+            <div class="cat-pill">🍺 Breweries</div>
+            <div class="cat-pill">💧 Nature</div>
+            <div class="cat-pill">📖 Culture</div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Why it's worth a stop</label>
+          <textarea placeholder="One or two lines in your own words...">Ukrainian-owned, cozy, great pastries and lavender lattes. Riders always ask about it.</textarea>
+        </div>
+        <div class="field">
+          <label>Location</label>
+          <input type="text" placeholder="Address or drop a pin" value="7809 NE Vancouver Plaza Dr, Vancouver WA">
+        </div>
+        <div class="field">
+          <label>Photo (optional)</label>
+          <div class="photo-drop"><span>📷</span>Tap to add a photo</div>
+        </div>
+        <button class="btn btn-primary">Submit for review</button>
+        <div class="submit-note">Your suggestion goes to the Roviq curator queue.<br>You'll be credited as "Suggested by a Roviq driver" once approved.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div>
+  <div class="col-label">🌲 Curator approval queue (you)</div>
+  <div class="phone">
+    <div class="screen">
+      <div class="notch"></div>
+      <div class="statusbar"><span>9:41</span><span>●●●  🛜  🔋</span></div>
+      <div class="admin-header">
+        <div class="admin-title">Review queue</div>
+        <div class="admin-sub">Suggestions from Roviq drivers</div>
+        <div class="queue-count">● 3 pending</div>
+      </div>
+      <div class="queue">
+
+        <div class="review-card">
+          <div class="rc-top">
+            <div class="rc-photo">☕</div>
+            <div class="rc-info">
+              <div class="rc-name">Kray's Coffee</div>
+              <div class="rc-meta">Coffee · Vancouver, WA</div>
+            </div>
+          </div>
+          <div class="rc-desc">"Ukrainian-owned, cozy, great pastries and lavender lattes. Riders always ask about it."</div>
+          <div class="rc-driver">— suggested by driver #A214</div>
+          <div class="rc-actions">
+            <button class="rc-btn rc-reject">Reject</button>
+            <button class="rc-btn rc-approve">Approve</button>
+          </div>
+        </div>
+
+        <div class="review-card">
+          <div class="rc-top">
+            <div class="rc-photo">🌮</div>
+            <div class="rc-info">
+              <div class="rc-name">Westmoreland Taco Spot</div>
+              <div class="rc-meta">Food · Milwaukie Ave</div>
+            </div>
+          </div>
+          <div class="rc-desc">"Small spot, always a line, best al pastor on that stretch."</div>
+          <div class="rc-driver">— suggested by driver #B092</div>
+          <div class="rc-actions">
+            <button class="rc-btn rc-reject">Reject</button>
+            <button class="rc-btn rc-approve">Approve</button>
+          </div>
+        </div>
+
+        <div class="review-card">
+          <div class="rc-top">
+            <div class="rc-photo">🍺</div>
+            <div class="rc-info">
+              <div class="rc-name">Ruse Brewing Crust Collective</div>
+              <div class="rc-meta">Breweries · NW Slabtown</div>
+            </div>
+          </div>
+          <div class="rc-desc">"Detroit-style pizza and beer, good patio for groups."</div>
+          <div class="rc-driver">— suggested by driver #A214</div>
+          <div class="rc-actions">
+            <button class="rc-btn rc-reject">Reject</button>
+            <button class="rc-btn rc-approve">Approve</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
