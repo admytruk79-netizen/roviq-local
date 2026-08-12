@@ -1,4 +1,4 @@
-# Roviq Local
+# Qremyn
 
 A driver-curated, map-based local guide for rideshare visitors to Portland,
 OR. Free for riders, driver-first distribution, sponsorship-funded by shops

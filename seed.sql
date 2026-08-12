@@ -1,4 +1,4 @@
--- Initial approved places for Roviq Local (Portland, OR).
+-- Initial approved places for Qremyn (Portland, OR).
 --
 -- Coordinates for well-known landmarks (Multnomah Falls, Crystal Springs
 -- Rhododendron Garden) are accurate. Coordinates for smaller shops/carts

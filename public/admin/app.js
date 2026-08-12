@@ -43,7 +43,7 @@
           </div>
         </div>
         <div class="rc-desc">"${escapeHtml(place.description || '')}"</div>
-        <div class="rc-driver">— suggested by ${place.submitted_by ? 'driver #' + escapeHtml(place.submitted_by) : 'a Roviq driver'}</div>
+        <div class="rc-driver">— suggested by ${place.submitted_by ? 'driver #' + escapeHtml(place.submitted_by) : 'a Qremyn driver'}</div>
         <div class="rc-actions">
           <button class="rc-btn rc-reject" data-action="rejected" type="button">Reject</button>
           <button class="rc-btn rc-approve" data-action="approved" type="button">Approve</button>
