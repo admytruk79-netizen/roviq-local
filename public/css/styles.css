@@ -74,6 +74,8 @@ button { font-family: inherit; }
   margin-bottom: 18px;
 }
 
+.brass-text { color: var(--brass); }
+
 .welcome h1 {
   color: var(--paper);
   font-size: 26px;
@@ -125,6 +127,13 @@ button { font-family: inherit; }
   justify-content: space-between;
 }
 
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .brand {
   font-family: 'Fraunces', serif;
   font-weight: 600;
@@ -132,6 +141,17 @@ button { font-family: inherit; }
   color: var(--fir);
   background: rgba(243,238,227,.92);
   padding: 7px 14px;
+  border-radius: 100px;
+  box-shadow: 0 4px 14px rgba(27,59,47,.15);
+}
+
+.loc-badge {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: .03em;
+  color: var(--ink-soft);
+  background: rgba(243,238,227,.92);
+  padding: 5px 10px;
   border-radius: 100px;
   box-shadow: 0 4px 14px rgba(27,59,47,.15);
 }
@@ -314,11 +334,43 @@ button { font-family: inherit; }
   border-radius: 100px;
   margin-bottom: 8px;
 }
+.sheet-pick-badge {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--fir-deep);
+  background: var(--brass-soft);
+  padding: 3px 10px;
+  border-radius: 100px;
+  margin-bottom: 8px;
+  margin-left: 6px;
+}
 .sheet-name { font-size: 21px; }
 .sheet-status { font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
+.sheet-hours { font-size: 12px; margin-top: 4px; font-weight: 600; }
+.sheet-hours.open { color: var(--ok); }
+.sheet-hours.closed { color: var(--no); }
 .sheet-desc { font-size: 13.5px; color: var(--ink-soft); line-height: 1.55; margin-top: 10px; }
 .sheet-actions { display: flex; gap: 10px; margin-top: 18px; }
 .sheet-actions .btn { flex: 1; margin: 0; width: auto; padding: 12px; }
+
+/* ---------- Directions choice sheet ---------- */
+.directions-sheet { z-index: 43; }
+.directions-choices { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+.directions-choice {
+  display: block;
+  text-align: center;
+  padding: 13px;
+  border-radius: 12px;
+  background: var(--paper-warm);
+  color: var(--fir);
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+}
+.directions-choice:active { background: var(--mist-soft); }
 
 /* ---------- Suggest form ---------- */
 .panel {

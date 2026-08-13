@@ -43,12 +43,20 @@
     }
   }
 
+  function showMapUnavailable(message) {
+    $('#map').innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:center;height:100%;padding:32px;text-align:center;font-family:Inter,sans-serif;color:#5B5A52;">' +
+      message +
+      '</div>';
+  }
+
   function initMap() {
     if (!state.mapboxToken) {
-      $('#map').innerHTML =
-        '<div style="display:flex;align-items:center;justify-content:center;height:100%;padding:32px;text-align:center;font-family:Inter,sans-serif;color:#5B5A52;">' +
-        'Map unavailable: no Mapbox token configured. Set the MAPBOX_TOKEN environment variable in the Cloudflare Pages project.' +
-        '</div>';
+      showMapUnavailable('Map unavailable: no Mapbox token configured. Set the MAPBOX_TOKEN environment variable in the Cloudflare Pages project.');
+      return;
+    }
+    if (typeof mapboxgl === 'undefined') {
+      showMapUnavailable('Map unavailable: Mapbox GL JS failed to load. The list view still works below.');
       return;
     }
 
@@ -63,15 +71,26 @@
     state.map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right');
 
     state.map.on('load', () => {
-      // Muted, driver-first custom look: soften parcels/roads and tint the
-      // Willamette a soft blue-grey, without needing a full custom Mapbox Studio style.
+      // Muted, driver-first custom look layered on top of light-v11 at
+      // runtime (no separate Mapbox Studio style needed): soft moss-green
+      // parcels/parks, a blue-grey Willamette, and a thinner street grid.
       const layers = state.map.getStyle().layers || [];
       layers.forEach((layer) => {
-        if (layer.id.includes('water')) {
-          try { state.map.setPaintProperty(layer.id, 'fill-color', '#C7D2D6'); } catch {}
-        }
-        if (layer.type === 'fill' && layer.id.includes('landuse')) {
-          try { state.map.setPaintProperty(layer.id, 'fill-opacity', 0.4); } catch {}
+        try {
+          if (layer.type === 'fill' && /water/.test(layer.id)) {
+            state.map.setPaintProperty(layer.id, 'fill-color', '#C7D2D6');
+          } else if (layer.type === 'fill' && /landuse|landcover|park/.test(layer.id)) {
+            state.map.setPaintProperty(layer.id, 'fill-color', '#B7C9AE');
+            state.map.setPaintProperty(layer.id, 'fill-opacity', 0.45);
+          } else if (layer.type === 'line' && /road|street|bridge/.test(layer.id)) {
+            const current = state.map.getPaintProperty(layer.id, 'line-width');
+            if (typeof current === 'number') {
+              state.map.setPaintProperty(layer.id, 'line-width', Math.max(0.4, current * 0.6));
+            }
+            state.map.setPaintProperty(layer.id, 'line-color', '#D8D2C0');
+          }
+        } catch {
+          // Some layer/property combos don't exist on every style version -- skip silently.
         }
       });
       renderMarkers();
@@ -92,7 +111,8 @@
     url.searchParams.set('status', 'approved');
     if (state.category !== 'all') url.searchParams.set('category', state.category);
     const res = await fetch(url);
-    state.places = res.ok ? await res.json() : [];
+    const data = res.ok ? await res.json() : null;
+    state.places = (data && data.success) ? data.places : [];
     renderMarkers();
     renderList();
   }
@@ -112,6 +132,54 @@
     const lat2 = (b.lat * Math.PI) / 180;
     const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
     return 2 * R * Math.asin(Math.sqrt(h));
+  }
+
+  // ---------- Hours / open-closed ----------
+  // Best-effort parser for "Mon-Fri 7am-5pm, Sat-Sun 8am-3pm" style strings.
+  // Falls back to showing the raw text with no open/closed color if it can't parse.
+  const DAY_NAMES = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+  function parseHourToken(tok) {
+    const m = /^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i.exec(tok.trim());
+    if (!m) return null;
+    let h = parseInt(m[1], 10);
+    const min = m[2] ? parseInt(m[2], 10) : 0;
+    const suffix = m[3] ? m[3].toLowerCase() : null;
+    if (suffix === 'pm' && h !== 12) h += 12;
+    if (suffix === 'am' && h === 12) h = 0;
+    return h * 60 + min;
+  }
+  function openStatus(hoursStr, now = new Date()) {
+    if (!hoursStr || typeof hoursStr !== 'string') return null;
+    const day = now.getDay();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const segments = hoursStr.split(',').map((s) => s.trim()).filter(Boolean);
+    for (const seg of segments) {
+      const parts = seg.split(/\s+/);
+      if (parts.length < 2) continue;
+      const dayPart = parts[0];
+      const timePart = parts.slice(1).join(' ');
+      const [startTime, endTime] = timePart.split('-').map((s) => s && s.trim());
+      const start = startTime && parseHourToken(startTime);
+      const end = endTime && parseHourToken(endTime);
+      if (start == null || end == null) continue;
+
+      let dayMatches = false;
+      const rangeMatch = /^([a-z]{3})-([a-z]{3})$/i.exec(dayPart);
+      if (rangeMatch) {
+        const startDay = DAY_NAMES.indexOf(rangeMatch[1].toLowerCase());
+        const endDay = DAY_NAMES.indexOf(rangeMatch[2].toLowerCase());
+        if (startDay !== -1 && endDay !== -1) {
+          dayMatches = startDay <= endDay
+            ? day >= startDay && day <= endDay
+            : day >= startDay || day <= endDay;
+        }
+      } else {
+        dayMatches = DAY_NAMES.indexOf(dayPart.slice(0, 3).toLowerCase()) === day;
+      }
+      if (!dayMatches) continue;
+      return nowMin >= start && nowMin < end;
+    }
+    return null;
   }
 
   // ---------- Markers (map) ----------
@@ -169,10 +237,25 @@
     state.activePlace = place;
     $('#sheet-photo').style.backgroundImage = place.photo_url ? `url('${place.photo_url}')` : 'none';
     $('#sheet-tag').textContent = `${CATEGORY_EMOJI[place.category] || ''} ${place.category}`;
+
+    const pickBadge = $('#sheet-pick-badge');
+    pickBadge.hidden = !place.is_drivers_pick;
+
     $('#sheet-name').textContent = place.name;
     $('#sheet-status').textContent = distanceLabel(place) || (place.address || '');
+
+    const hoursEl = $('#sheet-hours');
+    if (place.hours) {
+      hoursEl.hidden = false;
+      const status = openStatus(place.hours);
+      hoursEl.className = 'sheet-hours' + (status === true ? ' open' : status === false ? ' closed' : '');
+      const prefix = status === true ? 'Open now · ' : status === false ? 'Closed · ' : '';
+      hoursEl.textContent = prefix + place.hours;
+    } else {
+      hoursEl.hidden = true;
+    }
+
     $('#sheet-desc').textContent = place.description || '';
-    $('#sheet-directions').href = `https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`;
     updateSaveButton();
 
     $('#sheet-backdrop').classList.add('open');
@@ -185,6 +268,24 @@
     $('#sheet-backdrop').classList.remove('open');
     $('#sheet').classList.remove('open');
     state.activePlace = null;
+  }
+
+  // ---------- Directions choice sheet ----------
+  function openDirectionsSheet() {
+    const place = state.activePlace;
+    if (!place) return;
+    const dest = `${place.lat},${place.lng}`;
+    const label = encodeURIComponent(place.name);
+    $('#dir-google').href = `https://www.google.com/maps/dir/?api=1&destination=${dest}`;
+    $('#dir-apple').href = `https://maps.apple.com/?daddr=${dest}&q=${label}`;
+    $('#dir-waze').href = `https://waze.com/ul?ll=${dest}&navigate=yes`;
+    $('#directions-backdrop').classList.add('open');
+    $('#directions-sheet').classList.add('open');
+  }
+
+  function closeDirectionsSheet() {
+    $('#directions-backdrop').classList.remove('open');
+    $('#directions-sheet').classList.remove('open');
   }
 
   function updateSaveButton() {
@@ -318,9 +419,16 @@
     $('#toggle-list').addEventListener('click', () => setView('list'));
     $('#sheet-backdrop').addEventListener('click', closeSheet);
     $('#sheet-save').addEventListener('click', toggleSave);
+    $('#sheet-directions').addEventListener('click', openDirectionsSheet);
+    $('#directions-backdrop').addEventListener('click', closeDirectionsSheet);
 
     loadConfig().then(() => {
-      initMap();
+      try {
+        initMap();
+      } catch (err) {
+        console.error('Map init failed', err);
+        showMapUnavailable('Map unavailable right now. The list view still works below.');
+      }
       loadPlaces();
     });
   }

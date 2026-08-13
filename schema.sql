@@ -1,6 +1,8 @@
--- v1 schema: only `places` is needed for the free curated-guide phase.
--- shops / discounts / redemptions live in migrations/002_shops_sponsorship.sql
--- and should only be applied once the first sponsor signs on.
+-- v1 schema: `places` is the only table used by the free curated-guide phase.
+--
+-- shops / discounts / redemptions are included now (per the build brief) so
+-- no migration is needed later when shop sponsorships launch. They stay
+-- empty and unused until then.
 
 CREATE TABLE IF NOT EXISTS places (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -21,3 +23,28 @@ CREATE TABLE IF NOT EXISTS places (
 
 CREATE INDEX IF NOT EXISTS idx_places_status ON places(status);
 CREATE INDEX IF NOT EXISTS idx_places_category ON places(category);
+
+CREATE TABLE IF NOT EXISTS shops (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  place_id INTEGER NOT NULL REFERENCES places(id),
+  owner_name TEXT,
+  owner_email TEXT,
+  owner_phone TEXT,
+  plan_tier TEXT DEFAULT 'free' CHECK(plan_tier IN ('free','sponsored')),
+  sponsor_start_date TEXT,
+  sponsor_end_date TEXT
+);
+
+CREATE TABLE IF NOT EXISTS discounts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  shop_id INTEGER NOT NULL REFERENCES shops(id),
+  terms TEXT,
+  code TEXT,
+  active INTEGER DEFAULT 1
+);
+
+CREATE TABLE IF NOT EXISTS redemptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  discount_id INTEGER NOT NULL REFERENCES discounts(id),
+  redeemed_at TEXT DEFAULT CURRENT_TIMESTAMP
+);

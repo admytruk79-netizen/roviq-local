@@ -3,5 +3,5 @@ export function isAdminAuthed(request, env) {
 }
 
 export function unauthorized() {
-  return Response.json({ error: 'unauthorized' }, { status: 401 });
+  return Response.json({ success: false, error: 'unauthorized' }, { status: 401 });
 }

@@ -20,8 +20,8 @@
       showLogin('Wrong passcode — try again.');
       return;
     }
-    const places = await res.json();
-    renderQueue(places);
+    const data = await res.json();
+    renderQueue(data.success ? data.places : []);
   }
 
   function renderQueue(places) {
@@ -43,7 +43,7 @@
           </div>
         </div>
         <div class="rc-desc">"${escapeHtml(place.description || '')}"</div>
-        <div class="rc-driver">— suggested by ${place.submitted_by ? 'driver #' + escapeHtml(place.submitted_by) : 'a Qremyn driver'}</div>
+        <div class="rc-driver">— suggested by ${place.submitted_by ? 'driver #' + escapeHtml(place.submitted_by) : 'a Roviq driver'}</div>
         <div class="rc-actions">
           <button class="rc-btn rc-reject" data-action="rejected" type="button">Reject</button>
           <button class="rc-btn rc-approve" data-action="approved" type="button">Approve</button>
@@ -57,7 +57,7 @@
         const id = card.dataset.id;
         const status = e.target.dataset.action;
         btn.closest('.rc-actions').querySelectorAll('button').forEach((b) => (b.disabled = true));
-        const res = await fetch(`/api/places/${id}/status`, {
+        const res = await fetch(`/api/admin/places/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', 'X-Admin-Passcode': getPasscode() },
           body: JSON.stringify({ status }),

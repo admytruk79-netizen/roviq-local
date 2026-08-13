@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Qremyn — A driver's guide to Portland</title>
+<title>Roviq Local — A driver's guide to Portland</title>
 <meta name="description" content="A driver-curated map of Portland's best food carts, coffee, breweries, nature, and culture stops.">
 <meta name="theme-color" content="#1B3B2F">
 <link rel="manifest" href="/manifest.json">
@@ -17,7 +17,7 @@
 
   <!-- Welcome screen (first launch only) -->
   <div class="welcome" id="welcome" hidden>
-    <div class="welcome-mark">Qremyn</div>
+    <div class="welcome-mark">Roviq <span class="brass-text">Local</span></div>
     <h1>A driver's curated guide to Portland — not a directory.</h1>
     <p>Every spot on this map has been picked or vetted by a rideshare driver who actually knows the city. No pay-to-play listings.</p>
     <button class="btn btn-brass" id="welcome-continue">See the map</button>
@@ -32,7 +32,10 @@
   <!-- Top chrome: brand + view toggle + category chips -->
   <div class="topchrome">
     <div class="brandrow">
-      <div class="brand">Qremyn</div>
+      <div class="brand-group">
+        <div class="brand">Roviq <span class="brass-text">Local</span></div>
+        <div class="loc-badge" id="loc-badge">📍 Portland, OR</div>
+      </div>
       <div class="view-toggle">
         <button id="toggle-map" class="active" type="button">Map</button>
         <button id="toggle-list" type="button">List</button>
@@ -58,12 +61,28 @@
     <div class="sheet-photo" id="sheet-photo"></div>
     <div class="sheet-body">
       <span class="sheet-tag" id="sheet-tag"></span>
+      <span class="sheet-pick-badge" id="sheet-pick-badge" hidden>★ Driver's Pick</span>
       <h2 class="sheet-name" id="sheet-name"></h2>
       <div class="sheet-status" id="sheet-status"></div>
+      <div class="sheet-hours" id="sheet-hours" hidden></div>
       <p class="sheet-desc" id="sheet-desc"></p>
       <div class="sheet-actions">
         <button class="btn btn-outline" id="sheet-save" style="color:var(--fir);border-color:rgba(27,59,47,.25);" type="button">☆ Save</button>
-        <a class="btn btn-fir" id="sheet-directions" href="#" target="_blank" rel="noopener" style="text-decoration:none;text-align:center;">Directions</a>
+        <button class="btn btn-fir" id="sheet-directions" type="button">Directions</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Directions app-choice sheet -->
+  <div class="sheet-backdrop" id="directions-backdrop"></div>
+  <div class="sheet directions-sheet" id="directions-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-body">
+      <h2 class="sheet-name" style="font-size:16px;">Open directions in</h2>
+      <div class="directions-choices">
+        <a class="directions-choice" id="dir-google" href="#" target="_blank" rel="noopener">Google Maps</a>
+        <a class="directions-choice" id="dir-apple" href="#" target="_blank" rel="noopener">Apple Maps</a>
+        <a class="directions-choice" id="dir-waze" href="#" target="_blank" rel="noopener">Waze</a>
       </div>
     </div>
   </div>
@@ -108,7 +127,7 @@
         </div>
         <button class="btn btn-fir" type="submit">Submit for review</button>
         <div class="form-msg" id="form-msg"></div>
-        <div class="submit-note">Your suggestion goes to the Qremyn curator queue.<br>You'll be credited as "Suggested by a Qremyn driver" once approved.</div>
+        <div class="submit-note">Your suggestion goes to the Roviq curator queue.<br>You'll be credited as "Suggested by a Roviq driver" once approved.</div>
       </form>
     </div>
   </div>

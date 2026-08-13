@@ -1,4 +1,4 @@
-# Qremyn
+# Roviq Local
 
 A driver-curated, map-based local guide for rideshare visitors to Portland,
 OR. Free for riders, driver-first distribution, sponsorship-funded by shops
@@ -28,12 +28,15 @@ public/                 Static frontend (deployed as-is by Pages)
   manifest.json           Web app manifest (needed for TWA packaging)
 functions/               Cloudflare Pages Functions (file-based routing)
   api/places/             GET/POST /api/places, GET /api/places/:id,
-                           POST /api/places/:id/view, PATCH /api/places/:id/status
+                           POST /api/places/:id/view
   api/admin/queue.js       GET /api/admin/queue (curator-only)
+  api/admin/places/[id].js PATCH /api/admin/places/:id (curator-only, approve/reject)
   api/config.js            Exposes the public Mapbox token to the client
   _lib/auth.js             Shared passcode-auth helper
-schema.sql               v1 schema (places table only)
-migrations/002_shops_sponsorship.sql   shops/discounts/redemptions — apply once a sponsor signs on
+schema.sql               v1 schema: places, plus shops/discounts/redemptions
+                          (created now per the build brief so no later
+                          migration is needed; left empty/unused until a
+                          sponsor signs on)
 seed.sql                 Initial curated places for Portland
 ```
 
@@ -41,10 +44,12 @@ seed.sql                 Initial curated places for Portland
 
 - **D1 database**: `roviq-local` (uuid `9a594b6c-0e35-4417-afbc-d072166b3e98`)
   already exists in the connected Cloudflare account, bound as `DB` in
-  `wrangler.toml`, and the v1 `places` table + indexes from `schema.sql` are
-  already applied to it.
-- **Seed data is not yet loaded** into the live database — run the seed step
-  below once you're ready to go live with the curated list.
+  `wrangler.toml`. All four tables from `schema.sql` (`places`, `shops`,
+  `discounts`, `redemptions`) are live on it.
+- **Seed data is loaded** — the live database already has the 22 curated
+  places from `seed.sql` (3 flagged as driver's picks). Re-running
+  `npm run db:seed:remote` would duplicate rows, so only do that against a
+  freshly-migrated database.
 
 ## What you still need to do
 
@@ -114,9 +119,13 @@ npm run db:seed:remote      # loads seed.sql into the live D1 database — run o
 | `/api/places/:id` | GET | none | single place |
 | `/api/places` | POST | none | driver submission, forces `status='pending'` |
 | `/api/places/:id/view` | POST | none | increments `view_count` |
-| `/api/places/:id/status` | PATCH | `X-Admin-Passcode` header | body `{ "status": "approved" \| "rejected" }` |
 | `/api/admin/queue` | GET | `X-Admin-Passcode` header | all `status='pending'` places |
+| `/api/admin/places/:id` | PATCH | `X-Admin-Passcode` header | body `{ "status": "approved" \| "rejected" }`, only updates rows currently `pending` |
 | `/api/config` | GET | none | exposes the public Mapbox token to the frontend |
+
+Every route above (except `/api/config`) returns a consistent
+`{ "success": true, ... }` / `{ "success": false, "error": "..." }` JSON
+shape alongside the appropriate HTTP status code.
 
 Curator auth is intentionally a single shared passcode checked against the
 `ADMIN_PASSCODE` env var — this is a single-curator v1 tool, not a
@@ -149,9 +158,10 @@ native permission wiring.
 - `places.status` starts at `'pending'` for driver submissions and
   `'approved'` for anything inserted directly (e.g. `seed.sql`). Rejected
   places are kept with `status='rejected'`, not deleted.
-- `is_drivers_pick` is not set by the seed data — mark your own favorites
-  via a direct `UPDATE` or a future admin toggle, since only you know which
-  ones are actually your picks.
-- `shops`, `discounts`, and `redemptions` (in
-  `migrations/002_shops_sponsorship.sql`) are deliberately not part of v1.
-  Apply that migration once the first sponsor signs on.
+- `seed.sql` flags Case Study Coffee, Coava Coffee Roasters, and Kray's
+  Coffee as `is_drivers_pick=1`. Mark any additional favorites via a direct
+  `UPDATE` or a future admin toggle.
+- `shops`, `discounts`, and `redemptions` exist in the schema (see
+  `schema.sql`) but are deliberately unused and empty for v1 — no shop
+  dashboard, QR/discount redemption flow, or payments yet. They're there so
+  no migration is needed once the first sponsor signs on.

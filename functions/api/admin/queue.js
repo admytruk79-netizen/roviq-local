@@ -9,5 +9,5 @@ export async function onRequestGet({ request, env }) {
     "SELECT * FROM places WHERE status = 'pending' ORDER BY created_at ASC"
   ).all();
 
-  return Response.json(results);
+  return Response.json({ success: true, places: results });
 }

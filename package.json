@@ -2,7 +2,7 @@
   "name": "roviq-local",
   "version": "0.1.0",
   "private": true,
-  "description": "Qremyn — a driver-curated, map-based local guide for rideshare visitors to Portland, OR.",
+  "description": "Roviq Local — a driver-curated, map-based local guide for rideshare visitors to Portland, OR.",
   "scripts": {
     "dev": "wrangler pages dev public --d1=DB",
     "deploy": "wrangler pages deploy public",

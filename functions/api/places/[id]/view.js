@@ -4,7 +4,7 @@ export async function onRequestPost({ params, env }) {
   ).bind(params.id).run();
 
   if (result.meta.changes === 0) {
-    return Response.json({ error: 'not found' }, { status: 404 });
+    return Response.json({ success: false, error: 'not found' }, { status: 404 });
   }
-  return Response.json({ ok: true });
+  return Response.json({ success: true });
 }
