@@ -11,6 +11,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
     defaults:
       run:
         working-directory: android
@@ -44,31 +49,40 @@ jobs:
           name: roviq-local-debug-aab
           path: android/app/build/outputs/bundle/debug/app-debug.aab
 
+      - name: Check release signing secrets
+        id: signing
+        shell: bash
+        run: |
+          if [[ -n "$ANDROID_KEYSTORE_BASE64" && -n "$ANDROID_KEYSTORE_PASSWORD" && -n "$ANDROID_KEY_ALIAS" && -n "$ANDROID_KEY_PASSWORD" ]]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Release signing secrets are not configured; debug artifacts will still be produced."
+          fi
+
       - name: Prepare release keystore
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && secrets.ANDROID_KEYSTORE_PASSWORD != '' && secrets.ANDROID_KEY_ALIAS != '' && secrets.ANDROID_KEY_PASSWORD != '' }}
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        if: steps.signing.outputs.ready == 'true'
         run: |
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/roviq-upload.jks"
 
       - name: Build signed release APK and AAB
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && secrets.ANDROID_KEYSTORE_PASSWORD != '' && secrets.ANDROID_KEY_ALIAS != '' && secrets.ANDROID_KEY_PASSWORD != '' }}
+        if: steps.signing.outputs.ready == 'true'
         env:
           ROVIQ_KEYSTORE_PATH: ${{ runner.temp }}/roviq-upload.jks
-          ROVIQ_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ROVIQ_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ROVIQ_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ROVIQ_KEYSTORE_PASSWORD: ${{ env.ANDROID_KEYSTORE_PASSWORD }}
+          ROVIQ_KEY_ALIAS: ${{ env.ANDROID_KEY_ALIAS }}
+          ROVIQ_KEY_PASSWORD: ${{ env.ANDROID_KEY_PASSWORD }}
         run: gradle --no-daemon assembleRelease bundleRelease
 
       - name: Upload release APK
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && secrets.ANDROID_KEYSTORE_PASSWORD != '' && secrets.ANDROID_KEY_ALIAS != '' && secrets.ANDROID_KEY_PASSWORD != '' }}
+        if: steps.signing.outputs.ready == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: roviq-local-release-apk
           path: android/app/build/outputs/apk/release/app-release.apk
 
       - name: Upload release AAB
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && secrets.ANDROID_KEYSTORE_PASSWORD != '' && secrets.ANDROID_KEY_ALIAS != '' && secrets.ANDROID_KEY_PASSWORD != '' }}
+        if: steps.signing.outputs.ready == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: roviq-local-release-aab
