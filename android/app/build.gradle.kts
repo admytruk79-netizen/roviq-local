@@ -16,6 +16,15 @@ android {
         buildConfigField("String", "BASE_URL", "\"${project.findProperty("ROVIQ_BASE_URL") ?: "https://roviq-local.pages.dev/"}\"")
     }
 
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
     buildFeatures { buildConfig = true }
 
     buildTypes {
@@ -24,6 +33,10 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
+}
+
+kotlin {
+    jvmToolchain(17)
 }
 
 dependencies {
