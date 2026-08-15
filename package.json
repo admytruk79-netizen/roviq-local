@@ -1,8 +1,8 @@
 {
   "name": "roviq-local",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
-  "description": "Roviq Local — a driver-curated, map-based local guide for rideshare visitors to Portland, OR.",
+  "description": "ROVIQ Local — a global driver-curated, map-based local discovery guide.",
   "scripts": {
     "dev": "wrangler pages dev public --d1=DB",
     "deploy": "wrangler pages deploy public",
@@ -10,6 +10,7 @@
     "db:seed": "wrangler d1 execute roviq-local --file=./seed.sql",
     "db:migrate:remote": "wrangler d1 execute roviq-local --remote --file=./schema.sql",
     "db:migrate:v2:remote": "wrangler d1 execute roviq-local --remote --file=./migrations/002_product_v2.sql",
+    "db:migrate:global:remote": "wrangler d1 execute roviq-local --remote --file=./migrations/0003_global_markets.sql",
     "db:seed:remote": "wrangler d1 execute roviq-local --remote --file=./seed.sql"
   },
   "devDependencies": {
