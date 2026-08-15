@@ -2,11 +2,10 @@
   'use strict';
 
   const LOCATION_KEY = 'roviq_location_scope';
-  const DEFAULT_CENTER = { lng: -122.6765, lat: 45.5231, label: 'Portland, OR', city: 'Portland', region: 'Oregon', country: 'United States', country_code: 'US' };
   const saved = (() => {
     try { return JSON.parse(localStorage.getItem(LOCATION_KEY) || 'null'); } catch { return null; }
   })();
-  const scope = saved || { mode: 'auto', ...DEFAULT_CENTER };
+  const scope = saved || { mode: 'auto', label: 'Near me' };
   let activeMap = null;
   let mapboxToken = null;
 
@@ -50,11 +49,12 @@
     const place = find('place.');
     const locality = find('locality.');
     const postcode = find('postcode.');
+    const featureIsPlace = Array.isArray(feature.place_type) && feature.place_type.includes('place');
     return {
       country: country?.text || '',
       country_code: String(country?.properties?.short_code || '').toUpperCase(),
       region: region?.text || '',
-      city: place?.text || feature.place_type?.includes('place') ? feature.text : '',
+      city: place?.text || (featureIsPlace ? feature.text : ''),
       locality: locality?.text || '',
       postal_code: postcode?.text || '',
     };
@@ -112,7 +112,6 @@
     }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 });
   }
 
-  // Keep a recent approximate foreground position. No background tracking.
   if (scope.mode !== 'manual' && navigator.geolocation) {
     navigator.geolocation.getCurrentPosition((pos) => {
       saveScope({ mode: 'auto', lat: pos.coords.latitude, lng: pos.coords.longitude, label: 'Near me' });
@@ -120,7 +119,6 @@
     }, () => {}, { enableHighAccuracy: false, timeout: 6000, maximumAge: 300000 });
   }
 
-  // Patch Mapbox construction so the original app no longer hard-locks the map to Portland.
   if (window.mapboxgl?.Map) {
     const OriginalMap = window.mapboxgl.Map;
     window.mapboxgl.Map = class RoviqGlobalMap extends OriginalMap {
@@ -133,25 +131,22 @@
     };
   }
 
-  // Scope existing API calls globally without breaking the v1 app code.
   const originalFetch = window.fetch.bind(window);
   window.__ROVIQ_ORIGINAL_FETCH = originalFetch;
   window.fetch = async function roviqFetch(input, init) {
-    let raw = typeof input === 'string' ? input : input?.url;
+    const raw = typeof input === 'string' ? input : input?.url;
     if (!raw) return originalFetch(input, init);
 
     let url;
     try { url = new URL(raw, location.origin); } catch { return originalFetch(input, init); }
 
-    // Remove the old Portland-only geocoder bias. Bias toward the selected/current location instead.
     if (url.hostname === 'api.mapbox.com' && url.pathname.includes('/geocoding/')) {
       const coords = currentCoords();
       if (coords) url.searchParams.set('proximity', `${coords.lng},${coords.lat}`);
       else url.searchParams.delete('proximity');
       const response = await originalFetch(url.toString(), init);
       try {
-        const clone = response.clone();
-        const data = await clone.json();
+        const data = await response.clone().json();
         const feature = data.features?.[0];
         if (feature) window.__ROVIQ_LAST_GEOCODE_CONTEXT = contextFromFeature(feature);
       } catch {}
@@ -172,7 +167,19 @@
             if (scope.country_code) url.searchParams.set('country_code', scope.country_code);
           }
         }
-        return originalFetch(url.toString(), init);
+        const response = await originalFetch(url.toString(), init);
+        try {
+          const data = await response.clone().json();
+          const center = data.scope?.center;
+          if (!currentCoords() && center && activeMap) {
+            activeMap.easeTo({ center: [center.lng, center.lat], zoom: 11.8, duration: 600 });
+          }
+          if (!scope.city && data.scope?.city && scope.mode !== 'manual') {
+            saveScope({ label: data.scope.city, city: data.scope.city, country_code: data.scope.country_code || '' });
+            updateBadge();
+          }
+        } catch {}
+        return response;
       }
 
       if (method === 'POST' && typeof init?.body === 'string') {
