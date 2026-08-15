@@ -2,12 +2,15 @@ name: Migrate Global Database
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
   migrate:
+    if: github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Run global D1 migration'
     name: Apply global D1 migration
     runs-on: ubuntu-latest
     env:
