@@ -13,6 +13,7 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
+        buildConfigField("String", "BASE_URL", "\"${project.findProperty("ROVIQ_BASE_URL") ?: "https://roviq-local.pages.dev/"}\"")
     }
 
     buildFeatures { buildConfig = true }
@@ -28,6 +29,6 @@ android {
 dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("androidx.browser:browser:1.8.0")
+    implementation("androidx.activity:activity-ktx:1.10.0")
     implementation("androidx.car.app:app:1.4.0")
 }
