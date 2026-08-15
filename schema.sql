@@ -1,8 +1,5 @@
--- v1 schema: `places` is the only table used by the free curated-guide phase.
---
--- shops / discounts / redemptions are included now (per the build brief) so
--- no migration is needed later when shop sponsorships launch. They stay
--- empty and unused until then.
+-- ROVIQ Local schema.
+-- `places` powers discovery and moderation. Sponsor tables remain dormant until commercial launch.
 
 CREATE TABLE IF NOT EXISTS places (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -18,11 +15,18 @@ CREATE TABLE IF NOT EXISTS places (
   view_count INTEGER DEFAULT 0,
   status TEXT DEFAULT 'approved' CHECK(status IN ('pending','approved','rejected')),
   submitted_by TEXT,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT,
+  verified_at TEXT,
+  is_hidden INTEGER DEFAULT 0,
+  trust_level TEXT DEFAULT 'community' CHECK(trust_level IN ('roviq','driver','community')),
+  moderation_note TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_places_status ON places(status);
 CREATE INDEX IF NOT EXISTS idx_places_category ON places(category);
+CREATE INDEX IF NOT EXISTS idx_places_hidden ON places(is_hidden);
+CREATE INDEX IF NOT EXISTS idx_places_verified_at ON places(verified_at);
 
 CREATE TABLE IF NOT EXISTS shops (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
