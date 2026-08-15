@@ -1,5 +1,5 @@
 -- ROVIQ Local schema.
--- `places` powers discovery and moderation. Sponsor tables remain dormant until commercial launch.
+-- One global place catalog. Portland is the first populated market, not an app boundary.
 
 CREATE TABLE IF NOT EXISTS places (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -9,8 +9,16 @@ CREATE TABLE IF NOT EXISTS places (
   lat REAL NOT NULL,
   lng REAL NOT NULL,
   address TEXT,
+  country_code TEXT,
+  country TEXT,
+  region TEXT,
+  city TEXT,
+  locality TEXT,
+  postal_code TEXT,
+  market_slug TEXT,
   photo_url TEXT,
   hours TEXT,
+  timezone TEXT,
   is_drivers_pick INTEGER DEFAULT 0,
   view_count INTEGER DEFAULT 0,
   status TEXT DEFAULT 'approved' CHECK(status IN ('pending','approved','rejected')),
@@ -27,6 +35,9 @@ CREATE INDEX IF NOT EXISTS idx_places_status ON places(status);
 CREATE INDEX IF NOT EXISTS idx_places_category ON places(category);
 CREATE INDEX IF NOT EXISTS idx_places_hidden ON places(is_hidden);
 CREATE INDEX IF NOT EXISTS idx_places_verified_at ON places(verified_at);
+CREATE INDEX IF NOT EXISTS idx_places_country_city ON places(country_code, city);
+CREATE INDEX IF NOT EXISTS idx_places_market ON places(market_slug);
+CREATE INDEX IF NOT EXISTS idx_places_lat_lng ON places(lat, lng);
 
 CREATE TABLE IF NOT EXISTS shops (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
