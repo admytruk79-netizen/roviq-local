@@ -11,25 +11,19 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.css" rel="stylesheet">
 <link rel="stylesheet" href="/css/styles.css">
+<link rel="stylesheet" href="/css/v2.css">
 </head>
 <body>
+<div id="app-status" class="sr-status" role="status" aria-live="polite"></div>
 <div id="app">
-
-  <!-- Welcome screen (first launch only) -->
   <div class="welcome" id="welcome" hidden>
     <div class="welcome-mark">Roviq <span class="brass-text">Local</span></div>
     <h1>A driver's curated guide to Portland — not a directory.</h1>
     <p>Every spot on this map has been picked or vetted by a rideshare driver who actually knows the city. No pay-to-play listings.</p>
     <button class="btn btn-brass" id="welcome-continue">See the map</button>
   </div>
-
-  <!-- Map screen -->
   <div id="map"></div>
-
-  <!-- List view -->
   <div class="list-view" id="list-view" hidden></div>
-
-  <!-- Top chrome: brand + view toggle + category chips -->
   <div class="topchrome">
     <div class="brandrow">
       <div class="brand-group">
@@ -50,11 +44,7 @@
       <button class="chip" data-category="culture" type="button">📖 Culture</button>
     </div>
   </div>
-
-  <!-- Suggest-a-spot FAB -->
   <button class="fab-suggest" id="open-suggest" title="Suggest a spot" type="button">+</button>
-
-  <!-- Bottom sheet -->
   <div class="sheet-backdrop" id="sheet-backdrop"></div>
   <div class="sheet" id="sheet">
     <div class="sheet-handle"></div>
@@ -62,6 +52,7 @@
     <div class="sheet-body">
       <span class="sheet-tag" id="sheet-tag"></span>
       <span class="sheet-pick-badge" id="sheet-pick-badge" hidden>★ Driver's Pick</span>
+      <span class="sheet-trust-badge" id="sheet-trust-badge" hidden></span>
       <h2 class="sheet-name" id="sheet-name"></h2>
       <div class="sheet-status" id="sheet-status"></div>
       <div class="sheet-hours" id="sheet-hours" hidden></div>
@@ -72,8 +63,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Directions app-choice sheet -->
   <div class="sheet-backdrop" id="directions-backdrop"></div>
   <div class="sheet directions-sheet" id="directions-sheet">
     <div class="sheet-handle"></div>
@@ -86,8 +75,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Suggest-a-spot panel -->
   <div class="panel" id="suggest-panel" hidden>
     <div class="panel-topbar">
       <button class="back-btn" id="close-suggest" type="button">←</button>
@@ -95,45 +82,28 @@
     </div>
     <div class="panel-body">
       <form id="suggest-form">
-        <div class="field">
-          <label for="f-name">Name</label>
-          <input type="text" id="f-name" placeholder="e.g. Kray's Coffee" required>
-        </div>
+        <p class="submit-note" style="margin-top:0;">Recommend somewhere you'd genuinely send a passenger. Every submission is reviewed before it appears publicly.</p>
+        <div class="field"><label for="f-name">Name</label><input type="text" id="f-name" placeholder="e.g. Kray's Coffee" required></div>
         <div class="field">
           <label>Category</label>
           <div class="cat-pills" id="f-category-pills">
-            <div class="cat-pill" data-value="food">🌮 Food</div>
-            <div class="cat-pill" data-value="coffee">☕ Coffee</div>
-            <div class="cat-pill" data-value="breweries">🍺 Breweries</div>
-            <div class="cat-pill" data-value="nature">💧 Nature</div>
-            <div class="cat-pill" data-value="culture">📖 Culture</div>
+            <div class="cat-pill" data-value="food">🌮 Food</div><div class="cat-pill" data-value="coffee">☕ Coffee</div><div class="cat-pill" data-value="breweries">🍺 Breweries</div><div class="cat-pill" data-value="nature">💧 Nature</div><div class="cat-pill" data-value="culture">📖 Culture</div>
           </div>
         </div>
-        <div class="field">
-          <label for="f-desc">Why it's worth a stop</label>
-          <textarea id="f-desc" placeholder="One or two lines in your own words..."></textarea>
-        </div>
-        <div class="field">
-          <label for="f-address">Location</label>
-          <input type="text" id="f-address" placeholder="Address or intersection" required>
-        </div>
-        <div class="field">
-          <label for="f-photo">Photo URL (optional)</label>
-          <input type="url" id="f-photo" placeholder="https://...">
-        </div>
-        <div class="field">
-          <label for="f-driver">Your driver handle (optional)</label>
-          <input type="text" id="f-driver" placeholder="e.g. A214">
-        </div>
+        <div class="field"><label for="f-desc">Why it's worth a stop</label><textarea id="f-desc" placeholder="One or two lines in your own words..."></textarea></div>
+        <div class="field"><label for="f-address">Location</label><input type="text" id="f-address" placeholder="Address or intersection" required></div>
+        <div class="field"><label for="f-photo">Photo URL (optional)</label><input type="url" id="f-photo" placeholder="https://..."></div>
+        <div class="field"><label for="f-driver">Your driver handle (optional)</label><input type="text" id="f-driver" placeholder="e.g. A214"></div>
         <button class="btn btn-fir" type="submit">Submit for review</button>
         <div class="form-msg" id="form-msg"></div>
         <div class="submit-note">Your suggestion goes to the Roviq curator queue.<br>You'll be credited as "Suggested by a Roviq driver" once approved.</div>
       </form>
     </div>
   </div>
-
 </div>
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
+<script src="/js/v2-pre.js"></script>
 <script src="/js/app.js"></script>
+<script src="/js/v2.js"></script>
 </body>
 </html>
