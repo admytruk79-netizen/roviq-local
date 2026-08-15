@@ -17,15 +17,29 @@ export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
   const category = url.searchParams.get('category');
   const status = url.searchParams.get('status') || 'approved';
-  const countryCode = clean(url.searchParams.get('country_code'), 2).toUpperCase();
-  const city = clean(url.searchParams.get('city'), 120);
+  let countryCode = clean(url.searchParams.get('country_code'), 2).toUpperCase();
+  let city = clean(url.searchParams.get('city'), 120);
   const market = clean(url.searchParams.get('market'), 180);
-  const lat = Number(url.searchParams.get('lat'));
-  const lng = Number(url.searchParams.get('lng'));
+  let lat = Number(url.searchParams.get('lat'));
+  let lng = Number(url.searchParams.get('lng'));
   const radiusKm = Math.min(Math.max(Number(url.searchParams.get('radius_km')) || 50, 1), 250);
 
   if (!STATUSES.includes(status)) {
     return Response.json({ success: false, error: `status must be one of ${STATUSES.join(', ')}` }, { status: 400 });
+  }
+
+  // If the client has not selected a location and has not granted foreground GPS yet,
+  // use Cloudflare's coarse request geography as a zero-permission global fallback.
+  const explicitGeo = url.searchParams.has('lat') || url.searchParams.has('lng') || city || market || countryCode;
+  if (!explicitGeo && request.cf) {
+    const cfLat = Number(request.cf.latitude);
+    const cfLng = Number(request.cf.longitude);
+    if (Number.isFinite(cfLat) && Number.isFinite(cfLng)) {
+      lat = cfLat;
+      lng = cfLng;
+    }
+    city = clean(request.cf.city, 120);
+    countryCode = clean(request.cf.country, 2).toUpperCase();
   }
 
   const params = [status];
@@ -37,8 +51,8 @@ export async function onRequestGet({ request, env }) {
     where += ' AND category = ?';
     params.push(category);
   }
-  if (countryCode) { where += ' AND upper(COALESCE(country_code, ?)) = ?'; params.push('US', countryCode); }
-  if (city) { where += ' AND lower(COALESCE(city, ?)) = lower(?)'; params.push('Portland', city); }
+  if (countryCode && !Number.isFinite(lat)) { where += ' AND upper(COALESCE(country_code, ?)) = ?'; params.push('US', countryCode); }
+  if (city && !Number.isFinite(lat)) { where += ' AND lower(COALESCE(city, ?)) = lower(?)'; params.push('Portland', city); }
   if (market) { where += ' AND COALESCE(market_slug, ?) = ?'; params.push('us-or-portland', market); }
 
   const hasCoords = Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
@@ -71,7 +85,18 @@ export async function onRequestGet({ request, env }) {
       .sort((a, b) => (b.is_drivers_pick - a.is_drivers_pick) || (a.distance_km - b.distance_km));
   }
 
-  return Response.json({ success: true, scope: { country_code: countryCode || null, city: city || null, market: market || null, radius_km: hasCoords ? radiusKm : null }, places: results });
+  return Response.json({
+    success: true,
+    scope: {
+      country_code: countryCode || null,
+      city: city || null,
+      market: market || null,
+      radius_km: hasCoords ? radiusKm : null,
+      center: hasCoords ? { lat, lng } : null,
+      source: explicitGeo ? 'client' : (request.cf ? 'network' : 'unscoped')
+    },
+    places: results
+  });
 }
 
 export async function onRequestPost({ request, env }) {
