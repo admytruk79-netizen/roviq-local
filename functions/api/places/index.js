@@ -32,25 +32,22 @@ export async function onRequestGet({ request, env }) {
   const rawCategory = url.searchParams.get('category');
   const category = rawCategory ? rawCategory.toLowerCase() : null;
   const status = url.searchParams.get('status') || 'approved';
-  let countryCode = clean(url.searchParams.get('country_code'), 2).toUpperCase();
-  let city = clean(url.searchParams.get('city'), 120);
+  const countryCode = clean(url.searchParams.get('country_code'), 2).toUpperCase();
+  const city = clean(url.searchParams.get('city'), 120);
   const market = clean(url.searchParams.get('market'), 180);
-  let lat = Number(url.searchParams.get('lat'));
-  let lng = Number(url.searchParams.get('lng'));
+  const lat = Number(url.searchParams.get('lat'));
+  const lng = Number(url.searchParams.get('lng'));
   const radiusKm = Math.min(Math.max(Number(url.searchParams.get('radius_km')) || 50, 1), 250);
 
   if (!STATUSES.includes(status)) {
     return Response.json({ success: false, error: `status must be one of ${STATUSES.join(', ')}` }, { status: 400 });
   }
 
+  // Never use request.cf latitude/longitude as a substitute for the user's device location.
+  // Cloudflare edge/network geolocation can resolve to a remote colo or ISP location and
+  // incorrectly hide all nearby ROVIQ records. Geographic filtering happens only when the
+  // client explicitly supplies coordinates/city/market.
   const explicitGeo = url.searchParams.has('lat') || url.searchParams.has('lng') || city || market || countryCode;
-  if (!explicitGeo && request.cf) {
-    const cfLat = Number(request.cf.latitude);
-    const cfLng = Number(request.cf.longitude);
-    if (Number.isFinite(cfLat) && Number.isFinite(cfLng)) { lat = cfLat; lng = cfLng; }
-    city = clean(request.cf.city, 120);
-    countryCode = clean(request.cf.country, 2).toUpperCase();
-  }
 
   const params = [status];
   let where = 'status = ? AND COALESCE(is_hidden, 0) = 0';
@@ -106,7 +103,7 @@ export async function onRequestGet({ request, env }) {
     country_code: countryCode || null, city: city || null, market: market || null,
     radius_km: hasCoords ? radiusKm : null,
     center: hasCoords ? { lat, lng } : null,
-    source: explicitGeo ? 'client' : (request.cf ? 'network' : 'unscoped')
+    source: explicitGeo ? 'client' : 'unscoped'
   }, places: results });
 }
 
@@ -156,7 +153,6 @@ export async function onRequestPost({ request, env }) {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`
     ).bind(name, category, categoryKey, description || null, lat, lng, address || null, countryCode || null, country || null, region || null, city || null, locality || null, postalCode || null, market || null, timezone || null, photoUrl || null, submittedBy || null).run();
   } catch (err) {
-    // Backward-compatible fallback until migration 0006 is applied in production D1.
     result = await env.DB.prepare(
       `INSERT INTO places (name, category, description, lat, lng, address, country_code, country, region, city, locality, postal_code, market_slug, timezone, photo_url, status, submitted_by)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`
