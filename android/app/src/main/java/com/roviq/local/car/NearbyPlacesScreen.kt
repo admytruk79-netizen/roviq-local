@@ -15,7 +15,12 @@ import com.roviq.local.data.RoviqApi
 import com.roviq.local.data.RoviqPlace
 import java.util.concurrent.Executors
 
-class NearbyPlacesScreen(carContext: CarContext) : Screen(carContext) {
+class NearbyPlacesScreen(
+    carContext: CarContext,
+    private val title: String = "Nearby",
+    private val category: String? = null,
+    private val driversPickOnly: Boolean = false
+) : Screen(carContext) {
     private val executor = Executors.newSingleThreadExecutor()
     private var loading = true
     private var places: List<RoviqPlace> = emptyList()
@@ -28,7 +33,7 @@ class NearbyPlacesScreen(carContext: CarContext) : Screen(carContext) {
         error = null
         executor.execute {
             try {
-                places = RoviqApi.loadApprovedPlaces().take(12)
+                places = RoviqApi.loadApprovedPlaces(category, driversPickOnly).take(12)
             } catch (t: Throwable) {
                 places = emptyList()
                 error = "ROVIQ Local is temporarily unavailable"
@@ -41,8 +46,8 @@ class NearbyPlacesScreen(carContext: CarContext) : Screen(carContext) {
 
     override fun onGetTemplate(): Template {
         val builder = PlaceListMapTemplate.Builder()
-            .setTitle("ROVIQ Local")
-            .setHeaderAction(Action.APP_ICON)
+            .setTitle(title)
+            .setHeaderAction(Action.BACK)
             .setCurrentLocationEnabled(true)
 
         if (loading) return builder.setLoading(true).build()
@@ -51,7 +56,8 @@ class NearbyPlacesScreen(carContext: CarContext) : Screen(carContext) {
         if (places.isEmpty()) {
             list.addItem(
                 Row.Builder()
-                    .setTitle(error ?: "No nearby ROVIQ places yet")
+                    .setTitle(error ?: "No ROVIQ places found here yet")
+                    .addText("Tap to retry")
                     .setBrowsable(true)
                     .setOnClickListener { load() }
                     .build()
