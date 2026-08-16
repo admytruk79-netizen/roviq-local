@@ -1,7 +1,19 @@
 import { recordSubmission } from '../../_lib/moderation.js';
 
-const CATEGORIES = ['food', 'coffee', 'breweries', 'nature', 'culture'];
+const LEGACY_CATEGORIES = ['food', 'coffee', 'breweries', 'nature', 'culture'];
+const CATEGORIES = [
+  ...LEGACY_CATEGORIES,
+  'markets', 'scenic', 'recreation', 'family', 'lodging',
+  'automotive', 'charging', 'services', 'other'
+];
 const STATUSES = ['pending', 'approved', 'rejected'];
+
+const BROAD_CATEGORY = {
+  food: 'food', coffee: 'coffee', breweries: 'breweries', markets: 'food',
+  nature: 'nature', scenic: 'nature', recreation: 'nature',
+  culture: 'culture', family: 'culture', lodging: 'culture',
+  automotive: 'culture', charging: 'culture', services: 'culture', other: 'culture'
+};
 
 function clean(value, max = 120) {
   return typeof value === 'string' ? value.trim().slice(0, max) : '';
@@ -35,10 +47,7 @@ export async function onRequestGet({ request, env }) {
   if (!explicitGeo && request.cf) {
     const cfLat = Number(request.cf.latitude);
     const cfLng = Number(request.cf.longitude);
-    if (Number.isFinite(cfLat) && Number.isFinite(cfLng)) {
-      lat = cfLat;
-      lng = cfLng;
-    }
+    if (Number.isFinite(cfLat) && Number.isFinite(cfLng)) { lat = cfLat; lng = cfLng; }
     city = clean(request.cf.city, 120);
     countryCode = clean(request.cf.country, 2).toUpperCase();
   }
@@ -49,8 +58,13 @@ export async function onRequestGet({ request, env }) {
     if (!CATEGORIES.includes(category)) {
       return Response.json({ success: false, error: `category must be one of ${CATEGORIES.join(', ')}` }, { status: 400 });
     }
-    where += ' AND lower(category) = ?';
-    params.push(category);
+    if (LEGACY_CATEGORIES.includes(category)) {
+      where += ' AND lower(category) = ?';
+      params.push(category);
+    } else {
+      where += ' AND lower(COALESCE(category_key, category)) = ?';
+      params.push(category);
+    }
   }
   if (countryCode && !Number.isFinite(lat)) { where += ' AND upper(COALESCE(country_code, ?)) = ?'; params.push('US', countryCode); }
   if (city && !Number.isFinite(lat)) { where += ' AND lower(COALESCE(city, ?)) = lower(?)'; params.push('Portland', city); }
@@ -81,23 +95,19 @@ export async function onRequestGet({ request, env }) {
       const dLng = toRad(Number(p.lng) - lng);
       const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat)) * Math.cos(toRad(Number(p.lat))) * Math.sin(dLng / 2) ** 2;
       const distance_km = 6371 * 2 * Math.asin(Math.sqrt(a));
-      return { ...p, distance_km };
+      return { ...p, category_key: p.category_key || p.category, distance_km };
     }).filter((p) => p.distance_km <= radiusKm)
       .sort((a, b) => (b.is_drivers_pick - a.is_drivers_pick) || (a.distance_km - b.distance_km));
+  } else {
+    results = results.map((p) => ({ ...p, category_key: p.category_key || p.category }));
   }
 
-  return Response.json({
-    success: true,
-    scope: {
-      country_code: countryCode || null,
-      city: city || null,
-      market: market || null,
-      radius_km: hasCoords ? radiusKm : null,
-      center: hasCoords ? { lat, lng } : null,
-      source: explicitGeo ? 'client' : (request.cf ? 'network' : 'unscoped')
-    },
-    places: results
-  });
+  return Response.json({ success: true, scope: {
+    country_code: countryCode || null, city: city || null, market: market || null,
+    radius_km: hasCoords ? radiusKm : null,
+    center: hasCoords ? { lat, lng } : null,
+    source: explicitGeo ? 'client' : (request.cf ? 'network' : 'unscoped')
+  }, places: results });
 }
 
 export async function onRequestPost({ request, env }) {
@@ -106,7 +116,8 @@ export async function onRequestPost({ request, env }) {
   catch { return Response.json({ success: false, error: 'invalid JSON body' }, { status: 400 }); }
 
   const name = clean(body.name, 120);
-  const category = String(body.category || '').toLowerCase();
+  const categoryKey = String(body.category || '').toLowerCase();
+  const category = BROAD_CATEGORY[categoryKey];
   const description = clean(body.description, 800);
   const address = clean(body.address, 300);
   const photoUrl = clean(body.photo_url, 500);
@@ -123,7 +134,7 @@ export async function onRequestPost({ request, env }) {
   const lng = Number(body.lng);
 
   if (!name) return Response.json({ success: false, error: 'name is required' }, { status: 400 });
-  if (!CATEGORIES.includes(category)) return Response.json({ success: false, error: `category must be one of ${CATEGORIES.join(', ')}` }, { status: 400 });
+  if (!CATEGORIES.includes(categoryKey) || !category) return Response.json({ success: false, error: `category must be one of ${CATEGORIES.join(', ')}` }, { status: 400 });
   if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
     return Response.json({ success: false, error: 'valid lat and lng are required' }, { status: 400 });
   }
@@ -138,13 +149,22 @@ export async function onRequestPost({ request, env }) {
     return Response.json({ success: false, error: 'This place may already be in ROVIQ Local.', duplicates: possible.results }, { status: 409 });
   }
 
-  const result = await env.DB.prepare(
-    `INSERT INTO places (name, category, description, lat, lng, address, country_code, country, region, city, locality, postal_code, market_slug, timezone, photo_url, status, submitted_by)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`
-  ).bind(name, category, description || null, lat, lng, address || null, countryCode || null, country || null, region || null, city || null, locality || null, postalCode || null, market || null, timezone || null, photoUrl || null, submittedBy || null).run();
+  let result;
+  try {
+    result = await env.DB.prepare(
+      `INSERT INTO places (name, category, category_key, description, lat, lng, address, country_code, country, region, city, locality, postal_code, market_slug, timezone, photo_url, status, submitted_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`
+    ).bind(name, category, categoryKey, description || null, lat, lng, address || null, countryCode || null, country || null, region || null, city || null, locality || null, postalCode || null, market || null, timezone || null, photoUrl || null, submittedBy || null).run();
+  } catch (err) {
+    // Backward-compatible fallback until migration 0006 is applied in production D1.
+    result = await env.DB.prepare(
+      `INSERT INTO places (name, category, description, lat, lng, address, country_code, country, region, city, locality, postal_code, market_slug, timezone, photo_url, status, submitted_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`
+    ).bind(name, category, description || null, lat, lng, address || null, countryCode || null, country || null, region || null, city || null, locality || null, postalCode || null, market || null, timezone || null, photoUrl || null, submittedBy || null).run();
+  }
 
   const place = { id: result.meta.last_row_id, market_slug: market || null, city: city || null };
   try { await recordSubmission(env, place, submittedBy); } catch (err) { console.error('moderation record failed', err); }
 
-  return Response.json({ success: true, id: result.meta.last_row_id, status: 'pending', market_slug: market || null }, { status: 201 });
+  return Response.json({ success: true, id: result.meta.last_row_id, status: 'pending', market_slug: market || null, category: categoryKey }, { status: 201 });
 }
