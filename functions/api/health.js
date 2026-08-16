@@ -12,15 +12,18 @@ export async function onRequestGet({ env }) {
 
   const checks = {
     database,
-    mapbox_configured: Boolean(env.MAPBOX_TOKEN),
+    mapping_provider: 'openstreetmap-leaflet',
     admin_configured: Boolean(env.ADMIN_PASSCODE)
   };
-  const healthy = checks.database && checks.mapbox_configured;
+
+  // Mapping uses public OpenStreetMap tiles + Leaflet and requires no Mapbox token.
+  // Database availability is the only required backend health dependency here.
+  const healthy = checks.database;
 
   return Response.json(
     {
       success: healthy,
-      service: 'roviq-local',
+      service: 'roviq-local2',
       checks,
       ...(databaseError ? { database_error: databaseError } : {})
     },
