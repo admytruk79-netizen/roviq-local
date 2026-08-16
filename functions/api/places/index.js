@@ -1,3 +1,5 @@
+import { recordSubmission } from '../../_lib/moderation.js';
+
 const CATEGORIES = ['food', 'coffee', 'breweries', 'nature', 'culture'];
 const STATUSES = ['pending', 'approved', 'rejected'];
 
@@ -15,7 +17,8 @@ function marketSlug(countryCode, region, city) {
 
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
-  const category = url.searchParams.get('category');
+  const rawCategory = url.searchParams.get('category');
+  const category = rawCategory ? rawCategory.toLowerCase() : null;
   const status = url.searchParams.get('status') || 'approved';
   let countryCode = clean(url.searchParams.get('country_code'), 2).toUpperCase();
   let city = clean(url.searchParams.get('city'), 120);
@@ -28,8 +31,6 @@ export async function onRequestGet({ request, env }) {
     return Response.json({ success: false, error: `status must be one of ${STATUSES.join(', ')}` }, { status: 400 });
   }
 
-  // If the client has not selected a location and has not granted foreground GPS yet,
-  // use Cloudflare's coarse request geography as a zero-permission global fallback.
   const explicitGeo = url.searchParams.has('lat') || url.searchParams.has('lng') || city || market || countryCode;
   if (!explicitGeo && request.cf) {
     const cfLat = Number(request.cf.latitude);
@@ -48,7 +49,7 @@ export async function onRequestGet({ request, env }) {
     if (!CATEGORIES.includes(category)) {
       return Response.json({ success: false, error: `category must be one of ${CATEGORIES.join(', ')}` }, { status: 400 });
     }
-    where += ' AND category = ?';
+    where += ' AND lower(category) = ?';
     params.push(category);
   }
   if (countryCode && !Number.isFinite(lat)) { where += ' AND upper(COALESCE(country_code, ?)) = ?'; params.push('US', countryCode); }
@@ -105,7 +106,7 @@ export async function onRequestPost({ request, env }) {
   catch { return Response.json({ success: false, error: 'invalid JSON body' }, { status: 400 }); }
 
   const name = clean(body.name, 120);
-  const category = body.category;
+  const category = String(body.category || '').toLowerCase();
   const description = clean(body.description, 800);
   const address = clean(body.address, 300);
   const photoUrl = clean(body.photo_url, 500);
@@ -141,6 +142,9 @@ export async function onRequestPost({ request, env }) {
     `INSERT INTO places (name, category, description, lat, lng, address, country_code, country, region, city, locality, postal_code, market_slug, timezone, photo_url, status, submitted_by)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`
   ).bind(name, category, description || null, lat, lng, address || null, countryCode || null, country || null, region || null, city || null, locality || null, postalCode || null, market || null, timezone || null, photoUrl || null, submittedBy || null).run();
+
+  const place = { id: result.meta.last_row_id, market_slug: market || null, city: city || null };
+  try { await recordSubmission(env, place, submittedBy); } catch (err) { console.error('moderation record failed', err); }
 
   return Response.json({ success: true, id: result.meta.last_row_id, status: 'pending', market_slug: market || null }, { status: 201 });
 }
