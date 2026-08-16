@@ -1,11 +1,11 @@
-import { requireAdmin } from '../../_lib/auth.js';
+import { requireModerator, canModeratePlace } from '../../_lib/auth.js';
 import { ensureModerationSchema, updateContributorOutcome } from '../../_lib/moderation.js';
 
 const ACTIONS = new Set(['approve','reject','request_changes','hide','restore']);
 
 export async function onRequestPost({ request, env }) {
-  const auth = requireAdmin(request, env);
-  if (auth) return auth;
+  const { response, actor } = await requireModerator(request, env);
+  if (response) return response;
   await ensureModerationSchema(env);
 
   let body;
@@ -14,13 +14,14 @@ export async function onRequestPost({ request, env }) {
 
   const id = Number(body.place_id);
   const action = String(body.action || '');
-  const reviewer = String(body.reviewer_handle || 'admin').trim().slice(0,80) || 'admin';
+  const reviewer = actor.handle;
   const note = String(body.note || '').trim().slice(0,1000) || null;
   if (!Number.isInteger(id) || id < 1) return Response.json({ success:false, error:'valid place_id required' }, { status:400 });
   if (!ACTIONS.has(action)) return Response.json({ success:false, error:'invalid action' }, { status:400 });
 
-  const place = await env.DB.prepare('SELECT id,status,submitted_by,market_slug,city,is_hidden FROM places WHERE id=?').bind(id).first();
+  const place = await env.DB.prepare('SELECT id,status,submitted_by,market_slug,country_code,region,city,is_hidden FROM places WHERE id=?').bind(id).first();
   if (!place) return Response.json({ success:false, error:'place not found' }, { status:404 });
+  if (!canModeratePlace(actor, place)) return Response.json({ success:false, error:'not assigned to this market' }, { status:403 });
 
   let newStatus = place.status;
   let hidden = Number(place.is_hidden || 0);
@@ -39,5 +40,5 @@ export async function onRequestPost({ request, env }) {
   if (action === 'approve') await updateContributorOutcome(env, place.submitted_by, true);
   if (action === 'reject') await updateContributorOutcome(env, place.submitted_by, false);
 
-  return Response.json({ success:true, place_id:id, action:eventAction, status:newStatus, hidden:Boolean(hidden) });
+  return Response.json({ success:true, place_id:id, action:eventAction, status:newStatus, hidden:Boolean(hidden), reviewer, reviewer_role:actor.role });
 }
