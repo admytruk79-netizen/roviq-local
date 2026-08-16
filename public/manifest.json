@@ -7,5 +7,18 @@
   "display": "standalone",
   "background_color": "#F3EEE3",
   "theme_color": "#1B3B2F",
-  "icons": []
+  "icons": [
+    {
+      "src": "/icons/roviq-local.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/roviq-local-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
 }
