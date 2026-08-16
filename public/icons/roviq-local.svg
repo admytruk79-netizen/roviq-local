@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ROVIQ Local">
+  <rect width="512" height="512" rx="112" fill="#1B3B2F"/>
+  <circle cx="256" cy="256" r="154" fill="none" stroke="#C6A76A" stroke-width="20"/>
+  <path d="M183 356V156h91c62 0 101 31 101 84 0 39-22 66-59 77l69 39h-70l-59-35h-16v35h-57zm57-85h31c30 0 47-11 47-31s-17-31-47-31h-31v62z" fill="#F3EEE3"/>
+  <circle cx="365" cy="365" r="22" fill="#3AAE91"/>
+</svg>
