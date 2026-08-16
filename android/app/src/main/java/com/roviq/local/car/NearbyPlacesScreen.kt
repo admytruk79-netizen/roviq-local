@@ -33,7 +33,9 @@ class NearbyPlacesScreen(
         error = null
         executor.execute {
             try {
-                places = RoviqApi.loadApprovedPlaces(category, driversPickOnly).take(12)
+                places = RoviqApi.loadApprovedPlaces(category, driversPickOnly)
+                    .sortedWith(compareByDescending<RoviqPlace> { it.isRoviqPick() }.thenBy { it.name })
+                    .take(12)
             } catch (t: Throwable) {
                 places = emptyList()
                 error = "ROVIQ Local is temporarily unavailable"
@@ -56,7 +58,7 @@ class NearbyPlacesScreen(
         if (places.isEmpty()) {
             list.addItem(
                 Row.Builder()
-                    .setTitle(error ?: "No ROVIQ places found here yet")
+                    .setTitle(error ?: "No ROVIQ stops found here yet")
                     .addText("Tap to retry")
                     .setBrowsable(true)
                     .setOnClickListener { load() }
@@ -68,23 +70,32 @@ class NearbyPlacesScreen(
                 val mapPlace = Place.Builder(CarLocation.create(place.lat, place.lng))
                     .setMarker(marker)
                     .build()
-                val subtitle = buildString {
-                    if (place.driversPick) append("★ ROVIQ Pick")
-                    else append(place.category.replaceFirstChar { it.uppercase() })
-                    place.address?.let { append(" · ").append(it) }
-                }
-                list.addItem(
-                    Row.Builder()
-                        .setTitle(place.name)
-                        .addText(subtitle)
-                        .setBrowsable(true)
-                        .setMetadata(Metadata.Builder().setPlace(mapPlace).build())
-                        .setOnClickListener { screenManager.push(PlaceDetailScreen(carContext, place)) }
-                        .build()
-                )
+
+                val primary = if (place.isRoviqPick()) "★ ROVIQ PICK" else place.category.uppercase()
+                val reason = place.description
+                    ?.replace(Regex("\\s+"), " ")
+                    ?.trim()
+                    ?.take(72)
+                    ?.trimEnd('.', ',', ';', ':')
+                val secondary = reason ?: place.address?.let { compactAddress(it) }
+
+                val row = Row.Builder()
+                    .setTitle(place.name)
+                    .addText(primary)
+                    .setBrowsable(true)
+                    .setMetadata(Metadata.Builder().setPlace(mapPlace).build())
+                    .setOnClickListener { screenManager.push(PlaceDetailScreen(carContext, place)) }
+                if (!secondary.isNullOrBlank()) row.addText(secondary)
+                list.addItem(row.build())
             }
         }
 
         return builder.setItemList(list.build()).build()
     }
+
+    private fun RoviqPlace.isRoviqPick(): Boolean =
+        driversPick || trustLevel.equals("roviq", ignoreCase = true) || trustLevel.equals("driver", ignoreCase = true)
+
+    private fun compactAddress(address: String): String =
+        address.split(',').map { it.trim() }.filter { it.isNotBlank() }.take(2).joinToString(", ")
 }
