@@ -1,79 +1,19 @@
 (() => {
 'use strict';
-
 const $ = (s) => document.querySelector(s);
+let dropPinMode = false;
+let draftMarker = null;
 
-function openPanel() {
-  const panel = $('#suggest-panel');
-  if (!panel) return;
-  panel.hidden = false;
-  document.body.classList.add('suggest-open');
-  setTimeout(() => $('#f-name')?.focus(), 50);
-}
-
-function closePanel() {
-  const panel = $('#suggest-panel');
-  if (!panel) return;
-  panel.hidden = true;
-  document.body.classList.remove('suggest-open');
-}
-
-function message(text, type = '') {
-  const el = $('#form-msg');
-  if (!el) return;
-  el.textContent = text;
-  el.className = `form-msg${type ? ' ' + type : ''}`;
-}
-
-async function geocode(address) {
-  if (typeof window.__ROVIQ_GEOCODE_LOCATION === 'function') return window.__ROVIQ_GEOCODE_LOCATION(address);
-  return null;
-}
-
-async function submit(e) {
-  e.preventDefault();
-  const name = $('#f-name')?.value.trim() || '';
-  const address = $('#f-address')?.value.trim() || '';
-  const description = $('#f-desc')?.value.trim() || '';
-  const photoUrl = $('#f-photo')?.value.trim() || '';
-  const submittedBy = $('#f-driver')?.value.trim() || '';
-  const selectedCategory = $('#f-category')?.value || '';
-
-  if (!name || !address) { message('Place name and location are required.', 'error'); return; }
-  if (!selectedCategory) { message('Choose a category.', 'error'); return; }
-
-  message('Finding that location…');
-  const geo = await geocode(address);
-  if (!geo || !Number.isFinite(Number(geo.lat)) || !Number.isFinite(Number(geo.lng))) {
-    message('Could not find that location. Try a more specific address or city.', 'error'); return;
-  }
-
-  const payload = {
-    name, category: selectedCategory, description, address, photo_url: photoUrl, submitted_by: submittedBy,
-    lat: Number(geo.lat), lng: Number(geo.lng), country_code: geo.country_code || '', country: geo.country || '',
-    region: geo.region || '', city: geo.city || '', locality: geo.locality || '', postal_code: geo.postal_code || '',
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || ''
-  };
-
-  message('Sending for ROVIQ review…');
-  try {
-    const response = await fetch('/api/places', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    const data = await response.json().catch(() => ({}));
-    if (response.status === 409) { message(data.error || 'This place may already be in ROVIQ Local.', 'error'); return; }
-    if (!response.ok || !data.success) { message(data.error || 'Could not submit this place. Please try again.', 'error'); return; }
-    message('Submitted. ROVIQ will review it before it appears publicly.', 'success');
-    $('#suggest-form')?.reset();
-  } catch (err) {
-    console.error('Suggest a Spot failed', err);
-    message('Could not submit this place. Please try again.', 'error');
-  }
-}
-
-function init() {
-  $('#open-suggest')?.addEventListener('click', openPanel);
-  $('#close-suggest')?.addEventListener('click', closePanel);
-  $('#suggest-form')?.addEventListener('submit', submit);
-}
-
-document.addEventListener('DOMContentLoaded', init);
+function openPanel(){const p=$('#suggest-panel');if(!p)return;p.hidden=false;document.body.classList.add('suggest-open');setTimeout(()=>$('#f-name')?.focus(),50);}
+function closePanel(){const p=$('#suggest-panel');if(!p)return;p.hidden=true;document.body.classList.remove('suggest-open');dropPinMode=false;}
+function message(text,type=''){const el=$('#form-msg');if(!el)return;el.textContent=text;el.className=`form-msg${type?' '+type:''}`;}
+function locationStatus(text){const el=$('#location-capture-status');if(el)el.textContent=text;}
+function setCoords(lat,lng,label='Pinned location'){const a=Number(lat),b=Number(lng);if(!Number.isFinite(a)||!Number.isFinite(b))return;$('#f-lat').value=String(a);$('#f-lng').value=String(b);locationStatus(`${label} · ${a.toFixed(5)}, ${b.toFixed(5)}`);}
+async function geocode(address){if(typeof window.__ROVIQ_GEOCODE_LOCATION==='function')return window.__ROVIQ_GEOCODE_LOCATION(address);return null;}
+function useCurrent(){if(!navigator.geolocation){locationStatus('Location is not available on this device.');return;}locationStatus('Getting current location…');navigator.geolocation.getCurrentPosition(pos=>setCoords(pos.coords.latitude,pos.coords.longitude,'Current location captured'),()=>locationStatus('Could not get current location. You can search or drop a pin.'),{enableHighAccuracy:true,timeout:10000,maximumAge:15000});}
+function startDropPin(){const map=window.__ROVIQ_MAP_INSTANCE;if(!map){locationStatus('Map is not ready yet. Try again in a moment.');return;}dropPinMode=true;closePanel();dropPinMode=true;const mapEl=$('#map');if(mapEl)mapEl.style.cursor='crosshair';locationStatus('Tap the map where the place is.');map.once('click',e=>{dropPinMode=false;if(mapEl)mapEl.style.cursor='';setCoords(e.latlng.lat,e.latlng.lng,'Dropped pin');if(window.L){draftMarker?.remove();draftMarker=window.L.marker([e.latlng.lat,e.latlng.lng]).addTo(map);}openPanel();});}
+async function submit(e){e.preventDefault();const name=$('#f-name')?.value.trim()||'',address=$('#f-address')?.value.trim()||'',description=$('#f-desc')?.value.trim()||'',photoUrl=$('#f-photo')?.value.trim()||'',submittedBy=$('#f-driver')?.value.trim()||'',selectedCategory=$('#f-category')?.value||'';let lat=Number($('#f-lat')?.value),lng=Number($('#f-lng')?.value),geo=null;if(!name){message('Place name is required.','error');return;}if(!selectedCategory){message('Choose a category.','error');return;}if(!Number.isFinite(lat)||!Number.isFinite(lng)){if(!address){message('Capture your location, drop a pin, or enter a location to search.','error');return;}message('Finding that location…');geo=await geocode(address);if(!geo||!Number.isFinite(Number(geo.lat))||!Number.isFinite(Number(geo.lng))){message('Could not find that location. Use current location or drop a pin instead.','error');return;}lat=Number(geo.lat);lng=Number(geo.lng);}
+const payload={name,category:selectedCategory,description,address,photo_url:photoUrl,submitted_by:submittedBy,lat,lng,country_code:geo?.country_code||'',country:geo?.country||'',region:geo?.region||'',city:geo?.city||'',locality:geo?.locality||'',postal_code:geo?.postal_code||'',timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'',location_source:Number.isFinite(Number($('#f-lat')?.value))?'coordinate_capture':'geocoded_search'};message('Sending for ROVIQ review…');try{const response=await fetch('/api/places',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await response.json().catch(()=>({}));if(response.status===409){message(data.error||'This place may already be in ROVIQ Local.','error');return;}if(!response.ok||!data.success){message(data.error||'Could not submit this place. Please try again.','error');return;}message('Submitted. ROVIQ will review it before it appears publicly.','success');$('#suggest-form')?.reset();$('#f-lat').value='';$('#f-lng').value='';locationStatus('An address is optional. GPS coordinates or a dropped pin can locate the spot.');draftMarker?.remove();draftMarker=null;}catch(err){console.error('Suggest a Spot failed',err);message('Could not submit this place. Please try again.','error');}}
+function init(){$('#open-suggest')?.addEventListener('click',openPanel);$('#close-suggest')?.addEventListener('click',closePanel);$('#use-current-spot')?.addEventListener('click',useCurrent);$('#drop-pin-spot')?.addEventListener('click',startDropPin);$('#suggest-form')?.addEventListener('submit',submit);}
+document.addEventListener('DOMContentLoaded',init);
 })();
