@@ -4,6 +4,7 @@
   "private": true,
   "description": "ROVIQ Local — a global driver-curated, map-based local discovery guide.",
   "scripts": {
+    "build": "node -e \"console.log('ROVIQ Local is a static Cloudflare Pages app; public/ is ready to deploy.')\"",
     "dev": "wrangler pages dev public --d1=DB",
     "deploy": "wrangler pages deploy public",
     "db:migrate": "wrangler d1 execute roviq-local --file=./schema.sql",
