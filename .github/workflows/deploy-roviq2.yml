@@ -44,11 +44,14 @@ jobs:
       - name: Smoke test live API
         shell: bash
         run: |
-          sleep 3
-          curl --fail --show-error --silent "https://roviq-local2.admytruk79.workers.dev/api/health"
-          echo
+          sleep 4
+          HEALTH="$(curl --fail --show-error --silent "https://roviq-local2.admytruk79.workers.dev/api/health")"
+          echo "$HEALTH"
+          echo "$HEALTH" | grep -q '"success":true'
+
           RESPONSE="$(curl --fail --show-error --silent "https://roviq-local2.admytruk79.workers.dev/api/places?status=approved")"
-          echo "$RESPONSE" | head -c 2000
+          echo "$RESPONSE" | head -c 2500
           echo
-          echo "$RESPONSE" | grep -q '"success":true'
-          echo "$RESPONSE" | grep -q '"places":\['
+          node -e 'const d=JSON.parse(process.env.RESPONSE); if(!d.success || !Array.isArray(d.places) || d.places.length < 1){console.error("Live API returned no approved places");process.exit(1)} console.log(`Live API approved places: ${d.places.length}`)' 
+        env:
+          RESPONSE: ${{ env.RESPONSE }}
