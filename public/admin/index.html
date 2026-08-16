@@ -11,7 +11,7 @@
   body { background: var(--paper); }
   .admin-wrap { max-width: 560px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
   .login-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; gap: 16px; text-align: center; }
-  .login-wrap input { width: 240px; border: 1.5px solid rgba(27,59,47,.18); border-radius: 12px; padding: 12px 14px; font-size: 14px; min-height:44px; }
+  .login-wrap input { width: 280px; max-width:90vw; border: 1.5px solid rgba(27,59,47,.18); border-radius: 12px; padding: 12px 14px; font-size: 14px; min-height:44px; }
   .login-error { color: var(--no); font-size: 12.5px; min-height: 16px; }
   .admin-header { padding: 24px 20px 12px; }
   .admin-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 22px; color: var(--fir); }
@@ -22,7 +22,7 @@
   .queue { flex: 1; overflow-y: auto; padding: 6px 20px 40px; display: flex; flex-direction: column; gap: 12px; }
   .review-card { background: #fff; border-radius: 16px; padding: 14px; box-shadow: 0 4px 14px rgba(27,59,47,.08); border: 1px solid rgba(27,59,47,.08); }
   .rc-top { display: flex; gap: 10px; }.rc-photo { width: 52px; height: 52px; border-radius: 12px; flex: 0 0 auto; background: linear-gradient(135deg, var(--brass-soft), var(--brass)); display: flex; align-items: center; justify-content: center; font-size: 22px; background-size: cover; background-position: center; }
-  .rc-info { flex: 1; min-width: 0; }.rc-name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 15px; color: var(--fir); }.rc-meta { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .04em; margin-top: 2px; }.rc-desc { font-size: 12px; color: var(--ink-soft); margin-top: 8px; line-height: 1.45; }.rc-driver { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--mist); margin-top: 8px; }
+  .rc-info { flex: 1; min-width: 0; }.rc-name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 15px; color: var(--fir); }.rc-meta { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .04em; margin-top: 2px; overflow-wrap:anywhere; }.rc-desc { font-size: 12px; color: var(--ink-soft); margin-top: 8px; line-height: 1.45; }.rc-driver { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--mist); margin-top: 8px; overflow-wrap:anywhere; }
   .rc-actions { display: flex; gap: 8px; margin-top: 12px; }.rc-btn { flex: 1; text-align: center; padding: 9px; border-radius: 10px; font-size: 12.5px; font-weight: 600; cursor: pointer; border: none; min-height:44px; }.rc-approve { background: var(--ok); color: #fff; }.rc-reject { background: #fff; color: var(--no); border: 1.5px solid rgba(181,80,47,.3); }.empty-state { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 40px 20px; }.logout-link { font-size: 11.5px; color: var(--ink-soft); text-align: center; padding: 4px 20px 20px; cursor: pointer; text-decoration: underline; }
   button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid rgba(173,128,52,.55);outline-offset:3px}
 </style>
@@ -30,18 +30,18 @@
 <body>
 <div class="admin-wrap">
   <div class="login-wrap" id="login-wrap">
-    <div class="admin-title" style="font-size:24px;">Roviq curator</div>
-    <p style="color:var(--ink-soft);font-size:13px;max-width:280px;">Enter the curator passcode to review pending driver suggestions.</p>
-    <input type="password" id="passcode" placeholder="Passcode" autocomplete="current-password">
+    <div class="admin-title" style="font-size:24px;">ROVIQ curator</div>
+    <p style="color:var(--ink-soft);font-size:13px;max-width:320px;">Enter your curator token. The legacy super-admin passcode also works during migration.</p>
+    <input type="password" id="passcode" placeholder="Curator token or admin passcode" autocomplete="current-password">
     <button class="btn btn-fir" id="login-btn" type="button">Log in</button>
     <div class="login-error" id="login-error"></div>
   </div>
   <div id="queue-wrap" hidden style="display:flex;flex-direction:column;flex:1;">
     <div class="admin-header">
       <div class="admin-title">Review queue</div>
-      <div class="admin-sub">Suggestions from Roviq drivers</div>
+      <div class="admin-sub" id="admin-sub">Authenticated curator</div>
       <div class="queue-count" id="queue-count">● 0 pending</div>
-      <div class="admin-nav"><a class="btn btn-outline" href="/admin/manage.html">Open control center</a></div>
+      <div class="admin-nav"><a class="btn btn-outline" href="/admin/manage.html">Control center</a><a class="btn btn-outline" id="curator-admin-link" href="/admin/curators.html" hidden>Curators</a></div>
     </div>
     <div class="queue" id="queue"></div>
     <div class="logout-link" id="logout">Log out</div>
