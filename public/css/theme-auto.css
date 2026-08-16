@@ -1,0 +1,92 @@
+/* Automatic ROVIQ Local day/night presentation.
+   product-redesign.css remains the premium ROVIQ night theme.
+   The runtime adds .theme-day from 07:00-18:59 local device time unless a future user override is stored. */
+
+.empty-state{display:flex;min-height:220px;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:28px;text-align:center;color:var(--muted)}
+.empty-state strong{font-family:Cinzel,Georgia,serif;font-size:17px;color:var(--ink)}
+.empty-state span{max-width:300px;font-size:12.5px;line-height:1.45}
+
+body.theme-day{
+  --paper:#edf3f7;
+  --surface:#ffffff;
+  --surface-2:#f5f8fb;
+  --ink:#102238;
+  --muted:#64748a;
+  --line:rgba(11,37,69,.13);
+  background:#eaf1f6;
+  color:var(--ink);
+}
+body.theme-day #app{background:#eaf1f6}
+body.theme-day .topchrome{
+  background:linear-gradient(180deg,rgba(250,253,255,.99),rgba(241,247,251,.98));
+  border-bottom-color:rgba(11,37,69,.12);
+  box-shadow:0 5px 18px rgba(11,37,69,.08);
+}
+body.theme-day .brand{color:var(--navy)}
+body.theme-day .brand .brass-text{color:#a67f10}
+body.theme-day .discovery-copy h1{color:var(--navy)}
+body.theme-day .location-line{color:#65768a}
+body.theme-day .location-line strong{color:#32475e}
+body.theme-day .location-line button{color:#8e6b0d}
+body.theme-day .view-toggle{background:rgba(11,37,69,.05);border-color:rgba(11,37,69,.12)}
+body.theme-day .view-toggle button{color:#617287}
+body.theme-day .view-toggle button.active{background:var(--green);color:#04160d}
+body.theme-day .chips{background:rgba(242,247,251,.98)}
+body.theme-day .chip{background:#fff;border-color:rgba(11,37,69,.12);color:#334a62}
+body.theme-day .chip.active{background:var(--green);border-color:var(--green);color:#04160d}
+body.theme-day .chip[data-category="picks"]{border-color:rgba(166,127,16,.45);color:#8b690f}
+body.theme-day .chip[data-category="picks"].active{background:var(--gold);color:#102238;border-color:var(--gold)}
+
+body.theme-day #map{background:#dce8ef;filter:none}
+body.theme-day .leaflet-tile{filter:none}
+body.theme-day .leaflet-control-zoom a{background:#fff!important;color:#0b2545!important;border-color:rgba(11,37,69,.13)!important}
+body.theme-day .leaflet-control-attribution{background:rgba(255,255,255,.82)!important;color:#54667a!important}
+body.theme-day .leaflet-control-attribution a{color:#0b5f8a!important}
+body.theme-day .roviq-marker{border-color:#fff;box-shadow:0 0 0 4px rgba(33,208,122,.16),0 4px 12px rgba(11,37,69,.2)}
+body.theme-day .roviq-marker.roviq,body.theme-day .roviq-marker.pick{border-color:#fff4bd}
+body.theme-day .user-dot{border-color:#fff;box-shadow:0 0 0 6px rgba(33,208,122,.17),0 0 16px rgba(33,208,122,.45)}
+
+body.theme-day .list-view{background:linear-gradient(180deg,#eaf1f6,#f5f8fb)!important}
+body.theme-day .place-card{background:#fff;border-color:rgba(11,37,69,.1);box-shadow:0 7px 18px rgba(11,37,69,.08)}
+body.theme-day .place-name{color:#0b2545}
+body.theme-day .why-stop{color:#3d5065}
+body.theme-day .place-meta{color:#64758a}
+body.theme-day .place-address{color:#7a8999}
+body.theme-day .place-photo{background:linear-gradient(145deg,#e2ebf1,#f5f8fb)!important;color:#9a7615;border-color:rgba(11,37,69,.08)}
+body.theme-day .trust-pill{background:rgba(33,208,122,.09);border-color:rgba(17,156,86,.25);color:#087341}
+body.theme-day .trust-pill.roviq{background:rgba(201,162,39,.1);border-color:rgba(166,127,16,.35);color:#84630d}
+body.theme-day .trust-pill.driver{background:linear-gradient(90deg,rgba(33,208,122,.08),rgba(201,162,39,.08));border-color:rgba(166,127,16,.25);color:#59642b}
+body.theme-day .trust-pill.network{background:rgba(14,124,123,.09);border-color:rgba(14,124,123,.25);color:#0b6968}
+body.theme-day .card-actions button{background:#f5f8fb;border-color:rgba(11,37,69,.12);color:#263d55}
+body.theme-day .card-actions [data-dir]{background:var(--green);color:#04160d;border-color:var(--green)}
+
+body.theme-day .place-preview{background:#fff;border-color:rgba(166,127,16,.22);box-shadow:0 14px 34px rgba(11,37,69,.17);color:#102238}
+body.theme-day .place-preview h3{color:#0b2545}
+body.theme-day .place-preview .meta{color:#697a8e}
+body.theme-day .place-preview p{color:#3d5065}
+body.theme-day .place-preview .preview-actions button{background:#f5f8fb;border-color:rgba(11,37,69,.12);color:#263d55}
+body.theme-day .place-preview .preview-actions button.primary{background:var(--green);color:#04160d;border-color:var(--green)}
+
+body.theme-day .map-fallback{background:#eaf1f6}
+body.theme-day .map-fallback-card{background:#fff;border-color:rgba(11,37,69,.12);box-shadow:0 14px 34px rgba(11,37,69,.12)}
+body.theme-day .map-fallback h2{color:#0b2545}
+body.theme-day .map-fallback p{color:#62758a}
+
+body.theme-day .sheet{background:#fff;color:#102238;border-top-color:rgba(166,127,16,.2)}
+body.theme-day .sheet-name{color:#0b2545}
+body.theme-day .sheet-status,body.theme-day .sheet-desc{color:#5a6d82}
+body.theme-day .sheet-actions .btn-outline{color:#0b2545;border-color:rgba(11,37,69,.18)}
+body.theme-day .directions-choice{background:#f5f8fb;color:#0b2545;border-color:rgba(11,37,69,.12)}
+
+body.theme-day .panel{background:#eef4f8;color:#102238}
+body.theme-day .panel-topbar{background:#0b2545;border-color:rgba(201,162,39,.2)}
+body.theme-day .panel-topbar h1{color:#fff}
+body.theme-day .panel-body{background:#eef4f8}
+body.theme-day .field label{color:#51657b}
+body.theme-day .field input,body.theme-day .field textarea{background:#fff;border-color:rgba(11,37,69,.14);color:#102238}
+body.theme-day .cat-pill{background:#fff;color:#334a62;border-color:rgba(11,37,69,.14)}
+body.theme-day .submit-note{color:#5e7186}
+
+body.theme-day .bottom-nav{background:rgba(7,25,45,.98)}
+body.theme-day .empty-state{color:#65778b}
+body.theme-day .empty-state strong{color:#0b2545}
