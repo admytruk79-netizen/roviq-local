@@ -35,18 +35,16 @@ export async function onRequestGet({ request, env }) {
   const countryCode = clean(url.searchParams.get('country_code'), 2).toUpperCase();
   const city = clean(url.searchParams.get('city'), 120);
   const market = clean(url.searchParams.get('market'), 180);
-  const lat = Number(url.searchParams.get('lat'));
-  const lng = Number(url.searchParams.get('lng'));
+  const latParam = url.searchParams.get('lat');
+  const lngParam = url.searchParams.get('lng');
+  const lat = latParam !== null && latParam !== '' ? Number(latParam) : NaN;
+  const lng = lngParam !== null && lngParam !== '' ? Number(lngParam) : NaN;
   const radiusKm = Math.min(Math.max(Number(url.searchParams.get('radius_km')) || 50, 1), 250);
 
   if (!STATUSES.includes(status)) {
     return Response.json({ success: false, error: `status must be one of ${STATUSES.join(', ')}` }, { status: 400 });
   }
 
-  // Never use request.cf latitude/longitude as a substitute for the user's device location.
-  // Cloudflare edge/network geolocation can resolve to a remote colo or ISP location and
-  // incorrectly hide all nearby ROVIQ records. Geographic filtering happens only when the
-  // client explicitly supplies coordinates/city/market.
   const explicitGeo = url.searchParams.has('lat') || url.searchParams.has('lng') || city || market || countryCode;
 
   const params = [status];
