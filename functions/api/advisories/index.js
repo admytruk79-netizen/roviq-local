@@ -1,4 +1,4 @@
-const TYPES = ['access','road','parking','seasonal','closure','pedestrian','accessibility','official','other'];
+const TYPES = ['access','road','parking','seasonal','closure','pedestrian','official'];
 
 function clean(value, max = 160) {
   return typeof value === 'string' ? value.trim().slice(0, max) : '';
