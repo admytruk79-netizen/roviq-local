@@ -52,6 +52,4 @@ jobs:
           RESPONSE="$(curl --fail --show-error --silent "https://roviq-local2.admytruk79.workers.dev/api/places?status=approved")"
           echo "$RESPONSE" | head -c 2500
           echo
-          node -e 'const d=JSON.parse(process.env.RESPONSE); if(!d.success || !Array.isArray(d.places) || d.places.length < 1){console.error("Live API returned no approved places");process.exit(1)} console.log(`Live API approved places: ${d.places.length}`)' 
-        env:
-          RESPONSE: ${{ env.RESPONSE }}
+          printf '%s' "$RESPONSE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const x=JSON.parse(s);if(!x.success||!Array.isArray(x.places)||x.places.length<1){console.error("Live API returned no approved places");process.exit(1)}console.log(`Live API approved places: ${x.places.length}`)})'
