@@ -14,12 +14,16 @@ class PlaceDetailScreen(
     private val place: RoviqPlace
 ) : Screen(carContext) {
     override fun onGetTemplate(): Template {
+        val pick = place.driversPick || place.trustLevel.equals("roviq", true) || place.trustLevel.equals("driver", true)
         val message = buildString {
-            if (place.driversPick) append("★ ROVIQ Pick\n")
-            place.description?.let { append(it).append("\n") }
-            place.address?.let { append(it).append("\n") }
-            place.hours?.let { append(it) }
-        }.trim().ifBlank { place.category.replaceFirstChar { it.uppercase() } }
+            append(if (pick) "★ ROVIQ PICK" else place.category.uppercase())
+            place.description?.let {
+                val reason = it.replace(Regex("\\s+"), " ").trim().take(150)
+                if (reason.isNotBlank()) append("\n\nWhy stop here? ").append(reason)
+            }
+            place.address?.let { append("\n\n").append(it) }
+            place.hours?.let { append("\n").append(it) }
+        }
 
         val navigate = Action.Builder()
             .setTitle("Navigate")
