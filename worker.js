@@ -6,6 +6,7 @@ import * as config from './functions/api/config.js';
 import * as health from './functions/api/health.js';
 import * as geocode from './functions/api/geocode.js';
 import * as adminQueue from './functions/api/admin/queue.js';
+import * as adminModerate from './functions/api/admin/moderate.js';
 import * as adminPlaces from './functions/api/admin/places/index.js';
 import * as adminPlace from './functions/api/admin/places/[id].js';
 import * as adminAdvisories from './functions/api/admin/advisories/index.js';
@@ -39,6 +40,7 @@ export default {
     if (path === '/api/places') return run(places, request, env);
     if (path === '/api/advisories') return run(advisories, request, env);
     if (path === '/api/admin/queue') return run(adminQueue, request, env);
+    if (path === '/api/admin/moderate') return run(adminModerate, request, env);
     if (path === '/api/admin/places') return run(adminPlaces, request, env);
     if (path === '/api/admin/advisories') return run(adminAdvisories, request, env);
     if (path === '/api/cron/stale-submissions') return run(staleSubmissions, request, env);
