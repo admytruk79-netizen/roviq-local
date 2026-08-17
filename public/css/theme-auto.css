@@ -1,6 +1,10 @@
-/* Automatic ROVIQ Local day/night presentation.
+/* Automatic ROVIQ Local day/night/wildcard presentation.
    product-redesign.css remains the premium ROVIQ night theme.
-   The runtime adds .theme-day from 07:00-18:59 local device time unless a future user override is stored. */
+   The runtime adds .theme-day from 07:00-18:59 local device time unless a
+   future user override is stored, and additionally adds .theme-wildcard
+   on top of .theme-night on Friday/Saturday/Sunday nights (see
+   applyAutomaticTheme() in product-redesign.js), re-checked every 5
+   minutes so an open tab doesn't stay stuck in a stale mode. */
 
 .empty-state{display:flex;min-height:220px;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:28px;text-align:center;color:var(--muted)}
 .empty-state strong{font-family:Cinzel,Georgia,serif;font-size:17px;color:var(--ink)}
@@ -90,3 +94,23 @@ body.theme-day .submit-note{color:#5e7186}
 body.theme-day .bottom-nav{background:rgba(7,25,45,.98)}
 body.theme-day .empty-state{color:#65778b}
 body.theme-day .empty-state strong{color:#0b2545}
+
+/* ---------- Wildcard (Fri/Sat/Sun night) ----------
+   Redefining --green re-colors every element that already keys off it
+   (view-toggle/chip active states, marker fill, Directions buttons, the
+   bottom-nav active icon, etc.) with no further changes needed. The few
+   hardcoded rgba(33,208,122,...) glow shadows below are re-tinted by hand
+   to match. ROVIQ Pick/Driver's Pick markers stay gold on purpose -- that
+   trust signal shouldn't change with the weekend livery. */
+body.theme-wildcard{--green:#ff2fd6;--green-2:#c400a8}
+body.theme-wildcard .roviq-marker{box-shadow:0 0 0 4px rgba(255,47,214,.16),0 5px 16px rgba(0,0,0,.34)}
+body.theme-wildcard .roviq-marker.network{box-shadow:0 0 0 4px rgba(255,47,214,.2),0 0 0 7px rgba(201,162,39,.12),0 5px 18px rgba(0,0,0,.38)}
+body.theme-wildcard .roviq-marker:after{border-color:rgba(255,47,214,.42)}
+body.theme-wildcard .user-dot{box-shadow:0 0 0 6px rgba(255,47,214,.2),0 0 18px rgba(255,47,214,.75)}
+body.theme-wildcard .drive-hud__market,body.theme-wildcard .drive-hud__count{border-color:rgba(255,47,214,.28)}
+body.theme-wildcard #map.drive-map:after{background:linear-gradient(180deg,rgba(2,10,19,.04),rgba(2,10,19,.12)),repeating-linear-gradient(0deg,rgba(255,47,214,.02) 0,rgba(255,47,214,.02) 1px,transparent 1px,transparent 5px)}
+
+.wildcard-badge{display:inline-flex;align-items:center;margin-left:8px;padding:5px 10px;border-radius:999px;font:700 9.5px 'IBM Plex Mono',monospace;letter-spacing:.05em;text-transform:uppercase;color:#2a0426;background:linear-gradient(135deg,#ff5ff0,#c400a8);box-shadow:0 0 12px rgba(255,47,214,.5);animation:wildcardPulse 2.2s ease-in-out infinite}
+.wildcard-badge[hidden]{display:none}
+@keyframes wildcardPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.3)}}
+@media(prefers-reduced-motion:reduce){.wildcard-badge{animation:none}}
