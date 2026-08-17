@@ -9,6 +9,7 @@ import * as adminPlaces from './functions/api/admin/places/index.js';
 import * as adminPlace from './functions/api/admin/places/[id].js';
 import * as adminAdvisories from './functions/api/admin/advisories/index.js';
 import * as adminAdvisory from './functions/api/admin/advisories/[id].js';
+import * as staleSubmissions from './functions/api/cron/stale-submissions.js';
 
 function methodHandler(module, method) {
   const name = `onRequest${method.charAt(0)}${method.slice(1).toLowerCase()}`;
@@ -38,6 +39,7 @@ export default {
     if (path === '/api/admin/queue') return run(adminQueue, request, env);
     if (path === '/api/admin/places') return run(adminPlaces, request, env);
     if (path === '/api/admin/advisories') return run(adminAdvisories, request, env);
+    if (path === '/api/cron/stale-submissions') return run(staleSubmissions, request, env);
 
     let match = path.match(/^\/api\/places\/(\d+)\/view$/);
     if (match) return run(placeView, request, env, { id: match[1] });
@@ -56,5 +58,12 @@ export default {
     }
 
     return env.ASSETS.fetch(request);
+  },
+
+  async scheduled(controller, env, ctx) {
+    const request = new Request('https://roviq-local2.internal/api/cron/stale-submissions', { method: 'GET' });
+    ctx.waitUntil(staleSubmissions.onRequestGet({ request, env }).then(async (response) => {
+      if (!response.ok) console.error('ROVIQ Local stale-submission cron failed', response.status, await response.text());
+    }).catch((error) => console.error('ROVIQ Local stale-submission cron error', error)));
   }
 };
