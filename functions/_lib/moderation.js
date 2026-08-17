@@ -21,7 +21,6 @@ export async function recordSubmission(env, place, handleRaw) {
   const handle = contributorHandle(handleRaw);
   await env.DB.prepare(`INSERT INTO contributors (handle, submissions_count, updated_at) VALUES (?,1,?) ON CONFLICT(handle) DO UPDATE SET submissions_count=submissions_count+1, updated_at=excluded.updated_at`).bind(handle, new Date().toISOString()).run();
   await env.DB.prepare(`INSERT INTO moderation_events (place_id, action, reviewer_handle, new_status) VALUES (?, 'submitted', ?, 'pending')`).bind(place.id, handle).run();
-  await env.DB.prepare(`INSERT INTO moderation_notifications (market_slug, city, place_id, recipient_role) VALUES (?, ?, ?, 'curator')`).bind(place.market_slug || null, place.city || null, place.id).run();
 }
 
 export async function updateContributorOutcome(env, handleRaw, approved) {
