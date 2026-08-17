@@ -7,24 +7,26 @@
 <title>ROVIQ Local — Manage places</title>
 <link rel="stylesheet" href="/css/styles.css">
 <style>
-body{background:var(--paper);color:var(--ink)}.mgr{max-width:920px;margin:auto;padding:20px}.mgr-head{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.mgr-title{font-family:Fraunces,serif;color:var(--fir);font-size:26px}.toolbar{display:flex;gap:8px;flex-wrap:wrap}.toolbar input,.toolbar select,.editor input,.editor select,.editor textarea{min-height:44px;border:1px solid rgba(27,59,47,.18);border-radius:10px;padding:10px;background:white;font:inherit}.toolbar input{min-width:240px}.grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-top:18px}.place-row{background:#fff;border:1px solid rgba(27,59,47,.08);border-radius:14px;padding:14px;display:grid;grid-template-columns:1fr auto;gap:12px}.place-row h3{margin:0;color:var(--fir);font:600 18px Fraunces,serif}.meta{font:11px 'IBM Plex Mono',monospace;color:var(--ink-soft);margin-top:3px}.badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.badge{font-size:11px;padding:4px 7px;border-radius:999px;background:#eef2ec}.badge.warn{background:#fff0e8}.row-actions{display:flex;flex-direction:column;gap:6px}.row-actions button{min-width:92px;min-height:40px}.editor-wrap{position:fixed;inset:0;background:rgba(15,27,22,.42);display:none;align-items:flex-end;z-index:50}.editor-wrap.open{display:flex}.editor{width:100%;max-height:92vh;overflow:auto;background:var(--paper);border-radius:20px 20px 0 0;padding:20px}.editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.editor .wide{grid-column:1/-1}.editor label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600}.checks{display:flex;gap:18px;flex-wrap:wrap}.editor-actions{display:flex;gap:8px;margin-top:16px}.status{min-height:20px;font-size:12px;margin-top:8px}.login-card{max-width:420px;margin:18vh auto;background:#fff;padding:24px;border-radius:16px}.login-card input{width:100%;min-height:46px;margin:12px 0}@media(max-width:650px){.editor-grid{grid-template-columns:1fr}.place-row{grid-template-columns:1fr}.row-actions{flex-direction:row}.mgr{padding:14px}}
+body{background:var(--paper);color:var(--ink)}.mgr{max-width:920px;margin:auto;padding:20px}.mgr-head{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.mgr-title{font-family:Fraunces,serif;color:var(--fir);font-size:26px}.toolbar{display:flex;gap:8px;flex-wrap:wrap}.toolbar input,.toolbar select,.editor input,.editor select,.editor textarea{min-height:44px;border:1px solid rgba(27,59,47,.18);border-radius:10px;padding:10px;background:white;font:inherit}.toolbar input{min-width:240px}.grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-top:18px}.place-row{background:#fff;border:1px solid rgba(27,59,47,.08);border-radius:14px;padding:14px;display:grid;grid-template-columns:1fr auto;gap:12px}.place-row h3{margin:0;color:var(--fir);font:600 18px Fraunces,serif}.meta{font:11px 'IBM Plex Mono',monospace;color:var(--ink-soft);margin-top:3px}.badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.badge{font-size:11px;padding:4px 7px;border-radius:999px;background:#eef2ec}.badge.warn{background:#fff0e8}.row-actions{display:flex;flex-direction:column;gap:6px}.row-actions button{min-width:92px;min-height:40px}.actor-strip{margin:10px 0 2px;padding:9px 11px;border-radius:10px;background:#eef2ec;font-size:11px;color:var(--ink-soft);display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}.actor-strip button{border:0;background:transparent;text-decoration:underline;color:var(--ink-soft);cursor:pointer}.editor-wrap{position:fixed;inset:0;background:rgba(15,27,22,.42);display:none;align-items:flex-end;z-index:50}.editor-wrap.open{display:flex}.editor{width:100%;max-height:92vh;overflow:auto;background:var(--paper);border-radius:20px 20px 0 0;padding:20px}.editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.editor .wide{grid-column:1/-1}.editor label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600}.checks{display:flex;gap:18px;flex-wrap:wrap}.editor-actions{display:flex;gap:8px;margin-top:16px}.status{min-height:20px;font-size:12px;margin-top:8px}.login-card{max-width:420px;margin:18vh auto;background:#fff;padding:24px;border-radius:16px}.login-card input{width:100%;min-height:46px;margin:12px 0}@media(max-width:650px){.editor-grid{grid-template-columns:1fr}.place-row{grid-template-columns:1fr}.row-actions{flex-direction:row}.mgr{padding:14px}}
 </style>
 </head>
 <body>
 <div id="login" class="login-card">
   <h1 class="mgr-title">ROVIQ curator</h1>
-  <p>Manage the full Local catalogue, not only pending submissions.</p>
-  <input id="pass" type="password" autocomplete="current-password" placeholder="Curator passcode">
+  <p>Use your curator token or the legacy super-admin passcode.</p>
+  <input id="pass" type="password" autocomplete="current-password" placeholder="Curator token or admin passcode">
   <button id="loginBtn" class="btn btn-fir">Open control center</button>
   <div id="loginMsg" class="status"></div>
 </div>
 <main id="app" class="mgr" hidden>
-  <div class="mgr-head"><div><div class="mgr-title">Local control center</div><div class="meta">Add · review · edit · verify · hide</div></div><button id="newBtn" class="btn btn-fir">+ Add place</button></div>
+  <div class="mgr-head"><div><div class="mgr-title">Local control center</div><div class="meta">Review · edit · verify · hide · publish</div></div><button id="newBtn" class="btn btn-fir">+ Add place</button></div>
+  <div class="actor-strip"><span id="actorInfo">Signed in</span><button id="logoutBtn" type="button">Log out</button></div>
   <div class="toolbar">
-    <input id="search" type="search" placeholder="Search name, address, description">
+    <input id="search" type="search" placeholder="Search name, address, city, market">
     <select id="statusFilter"><option value="">All statuses</option><option>pending</option><option>approved</option><option>rejected</option></select>
     <button id="refreshBtn" class="btn btn-outline">Refresh</button>
     <a href="/admin/" class="btn btn-outline">Pending queue</a>
+    <a href="/admin/curators.html" class="btn btn-outline">Curators</a>
   </div>
   <div id="list" class="grid"></div>
 </main>
@@ -34,7 +36,7 @@ body{background:var(--paper);color:var(--ink)}.mgr{max-width:920px;margin:auto;p
     <input id="placeId" type="hidden">
     <div class="editor-grid">
       <label>Name<input id="name" required></label>
-      <label>Category<select id="category"><option value="food">Food</option><option value="coffee">Coffee</option><option value="breweries">Breweries</option><option value="nature">Nature</option><option value="culture">Culture</option></select></label>
+      <label>Category<select id="category"><option value="food">Food</option><option value="coffee">Coffee</option><option value="breweries">Breweries</option><option value="markets">Markets & Shops</option><option value="nature">Nature</option><option value="scenic">Scenic Stops</option><option value="culture">Culture</option><option value="recreation">Recreation</option><option value="family">Family</option><option value="lodging">Lodging</option><option value="automotive">Automotive</option><option value="charging">Charging</option><option value="services">Services</option><option value="other">Other</option></select></label>
       <label class="wide">Description<textarea id="description" rows="3"></textarea></label>
       <label class="wide">Address<input id="address"></label>
       <label>Latitude<input id="lat" type="number" step="any" required></label>
