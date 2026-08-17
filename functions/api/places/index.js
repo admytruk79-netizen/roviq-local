@@ -1,4 +1,5 @@
 import { recordSubmission } from '../../_lib/moderation.js';
+import { notifyCuratorsOfSubmission } from '../../_lib/notifications.js';
 
 const LEGACY_CATEGORIES = ['food', 'coffee', 'breweries', 'nature', 'culture'];
 const CATEGORIES = [
@@ -46,9 +47,9 @@ export async function onRequestGet({ request, env }) {
   }
 
   const explicitGeo = url.searchParams.has('lat') || url.searchParams.has('lng') || city || market || countryCode;
-
   const params = [status];
   let where = 'status = ? AND COALESCE(is_hidden, 0) = 0';
+
   if (category && category !== 'all') {
     if (!CATEGORIES.includes(category)) {
       return Response.json({ success: false, error: `category must be one of ${CATEGORIES.join(', ')}` }, { status: 400 });
@@ -61,6 +62,7 @@ export async function onRequestGet({ request, env }) {
       params.push(category);
     }
   }
+
   if (countryCode && !Number.isFinite(lat)) { where += ' AND upper(COALESCE(country_code, ?)) = ?'; params.push('US', countryCode); }
   if (city && !Number.isFinite(lat)) { where += ' AND lower(COALESCE(city, ?)) = lower(?)'; params.push('Portland', city); }
   if (market) { where += ' AND COALESCE(market_slug, ?) = ?'; params.push('us-or-portland', market); }
@@ -150,15 +152,39 @@ export async function onRequestPost({ request, env }) {
       `INSERT INTO places (name, category, category_key, description, lat, lng, address, country_code, country, region, city, locality, postal_code, market_slug, timezone, photo_url, status, submitted_by)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`
     ).bind(name, category, categoryKey, description || null, lat, lng, address || null, countryCode || null, country || null, region || null, city || null, locality || null, postalCode || null, market || null, timezone || null, photoUrl || null, submittedBy || null).run();
-  } catch (err) {
+  } catch {
     result = await env.DB.prepare(
       `INSERT INTO places (name, category, description, lat, lng, address, country_code, country, region, city, locality, postal_code, market_slug, timezone, photo_url, status, submitted_by)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`
     ).bind(name, category, description || null, lat, lng, address || null, countryCode || null, country || null, region || null, city || null, locality || null, postalCode || null, market || null, timezone || null, photoUrl || null, submittedBy || null).run();
   }
 
-  const place = { id: result.meta.last_row_id, market_slug: market || null, city: city || null };
-  try { await recordSubmission(env, place, submittedBy); } catch (err) { console.error('moderation record failed', err); }
+  const place = {
+    id: result.meta.last_row_id,
+    name,
+    category,
+    category_key: categoryKey,
+    market_slug: market || null,
+    city: city || null,
+    region: region || null,
+    country_code: countryCode || null,
+    lat,
+    lng
+  };
 
-  return Response.json({ success: true, id: result.meta.last_row_id, status: 'pending', market_slug: market || null, category: categoryKey }, { status: 201 });
+  try { await recordSubmission(env, place, submittedBy); }
+  catch (err) { console.error('moderation record failed', err); }
+
+  let notification = null;
+  try { notification = await notifyCuratorsOfSubmission(env, place); }
+  catch (err) { console.error('curator notification failed', err); }
+
+  return Response.json({
+    success: true,
+    id: result.meta.last_row_id,
+    status: 'pending',
+    market_slug: market || null,
+    category: categoryKey,
+    notification: notification ? { recipients: notification.recipients, delivered: notification.delivered } : null
+  }, { status: 201 });
 }
