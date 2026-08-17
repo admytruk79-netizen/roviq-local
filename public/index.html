@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Roviq Local — A driver's guide to Portland</title>
 <meta name="description" content="A driver-curated map of Portland's best food carts, coffee, breweries, nature, and culture stops.">
-<meta name="theme-color" content="#1B3B2F">
+<meta name="theme-color" content="#0A0C10">
 <link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icons/icon-192.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.css" rel="stylesheet">
 <link rel="stylesheet" href="/css/styles.css">
 </head>
@@ -35,10 +36,12 @@
       <div class="brand-group">
         <div class="brand">Roviq <span class="brass-text">Local</span></div>
         <div class="loc-badge" id="loc-badge">📍 Portland, OR</div>
+        <div class="wildcard-badge" id="wildcard-badge" hidden>★ Weekend Special</div>
       </div>
       <div class="view-toggle">
         <button id="toggle-map" class="active" type="button">Map</button>
         <button id="toggle-list" type="button">List</button>
+        <button id="toggle-saved" type="button">★ Saved</button>
       </div>
     </div>
     <div class="chips" id="chips">
@@ -56,7 +59,7 @@
 
   <!-- Bottom sheet -->
   <div class="sheet-backdrop" id="sheet-backdrop"></div>
-  <div class="sheet" id="sheet">
+  <div class="sheet texture-carbon" id="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-photo" id="sheet-photo"></div>
     <div class="sheet-body">
@@ -67,7 +70,7 @@
       <div class="sheet-hours" id="sheet-hours" hidden></div>
       <p class="sheet-desc" id="sheet-desc"></p>
       <div class="sheet-actions">
-        <button class="btn btn-outline" id="sheet-save" style="color:var(--fir);border-color:rgba(27,59,47,.25);" type="button">☆ Save</button>
+        <button class="btn btn-outline" id="sheet-save" type="button">☆ Save</button>
         <button class="btn btn-fir" id="sheet-directions" type="button">Directions</button>
       </div>
     </div>
@@ -75,7 +78,7 @@
 
   <!-- Directions app-choice sheet -->
   <div class="sheet-backdrop" id="directions-backdrop"></div>
-  <div class="sheet directions-sheet" id="directions-sheet">
+  <div class="sheet directions-sheet texture-carbon" id="directions-sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-body">
       <h2 class="sheet-name" style="font-size:16px;">Open directions in</h2>
@@ -88,7 +91,7 @@
   </div>
 
   <!-- Suggest-a-spot panel -->
-  <div class="panel" id="suggest-panel" hidden>
+  <div class="panel texture-carbon" id="suggest-panel" hidden>
     <div class="panel-topbar">
       <button class="back-btn" id="close-suggest" type="button">←</button>
       <h1>Suggest a spot</h1>

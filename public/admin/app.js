@@ -32,7 +32,7 @@
       return;
     }
     queue.innerHTML = places.map((place) => `
-      <div class="review-card" data-id="${place.id}">
+      <div class="review-card texture-carbon" data-id="${place.id}">
         <div class="rc-top">
           <div class="rc-photo" style="${place.photo_url ? `background-image:url('${escapeHtml(place.photo_url)}')` : ''}">
             ${place.photo_url ? '' : (CATEGORY_EMOJI[place.category] || '📍')}

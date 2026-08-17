@@ -8,13 +8,36 @@ later. See the original build brief for full product context.
 
 - **Frontend**: static single-page app — plain HTML/CSS/JS, no build step —
   served from `public/`
-- **Map**: Mapbox GL JS, lightly re-styled at runtime (muted water/landuse)
-  on top of the `light-v11` base style
+- **Map**: Mapbox GL JS, re-styled at runtime (moss-green parcels/parks,
+  thinner streets, blue-grey water) on top of the `light-v11` base style
 - **Hosting**: Cloudflare Pages (static assets) + Pages Functions (API
   routes, in `functions/`)
 - **Database**: Cloudflare D1 (SQLite)
 - **Android**: Trusted Web Activity (TWA) wrapping the live site — see
   [Android packaging](#android-packaging-twa)
+
+## Look and feel
+
+A dark, high-contrast "night drive" design system (fir-green's replacement):
+asphalt-black surfaces, amber glow for driver's picks, cyan/neon for
+interactive elements, `Rajdhani` for headings, `IBM Plex Mono` for tags, a
+carbon-fiber weave + fine grain texture on cards/sheets/panels, and short
+CSS transitions on view switches, the welcome screen, and the suggest panel.
+
+Three modes, switched automatically via `document.documentElement.dataset.mode`
+(see `applyThemeMode()` / `getThemeMode()` in `public/js/app.js`), re-checked
+every 5 minutes so an open tab doesn't get stuck in a stale mode:
+
+| Mode | When | What changes |
+|---|---|---|
+| `day` | ~6am–7pm, any day | Light surfaces, dark text, a deep-teal accent instead of neon cyan — built for outdoor/sunlight readability |
+| `night` | ~7pm–6am, Mon–Thu | The default dark neon theme |
+| `wildcard` | ~7pm–6am, Fri/Sat/Sun | Same dark base as `night`, but the cyan accent flips to a hot-magenta livery, plus a pulsing "Weekend Special" badge next to the wordmark |
+
+All theme colors are CSS custom properties on `:root` (overridden per mode
+via `:root[data-mode="..."]`), and every glow/shadow uses `color-mix()`
+against those variables, so a mode swap re-colors buttons, badges, map pins,
+and text-shadows consistently without touching component CSS.
 
 ## Project layout
 
@@ -72,14 +95,13 @@ seed.sql                 Initial curated places for Portland
    - `MAPBOX_TOKEN` — the public token from step 1
    - `ADMIN_PASSCODE` — a shared passcode for the `/admin` curator queue
      (mark as "Encrypt")
-5. **Add app icons** — `public/manifest.json` currently has an empty `icons`
-   array. Add at least a 192×192 and a 512×512 PNG (ideally a maskable
-   variant too) under `public/icons/` and reference them in the manifest
-   before generating the Android package — Bubblewrap/PWABuilder both
-   require valid manifest icons.
-6. **Enable Cloudflare Web Analytics** on the Pages project (dashboard
+5. **Enable Cloudflare Web Analytics** on the Pages project (dashboard
    toggle, no code changes needed) for overall traffic; per-listing views
    are already tracked via `places.view_count`.
+
+App icons are already done: `public/icons/icon-192.png`, `icon-512.png`,
+and a padded `icon-512-maskable.png` are generated and wired into
+`manifest.json` — no further action needed before Android packaging.
 
 ## Local development
 

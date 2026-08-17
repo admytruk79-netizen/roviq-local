@@ -18,6 +18,33 @@
 
   const $ = (sel) => document.querySelector(sel);
 
+  // ---------- Theme mode: day / night / wildcard (weekend nights) ----------
+  function getThemeMode(now = new Date()) {
+    const hour = now.getHours();
+    const isDaytime = hour >= 6 && hour < 19;
+    if (isDaytime) return 'day';
+    const day = now.getDay(); // 0 Sun .. 6 Sat
+    const isWeekendNight = day === 5 || day === 6 || day === 0;
+    return isWeekendNight ? 'wildcard' : 'night';
+  }
+
+  function applyThemeMode() {
+    const mode = getThemeMode();
+    document.documentElement.dataset.mode = mode;
+    const badge = $('#wildcard-badge');
+    if (badge) badge.hidden = mode !== 'wildcard';
+    requestAnimationFrame(syncListViewOffset);
+  }
+
+  // The top chrome (brand + badges + chips) can wrap onto an extra line --
+  // e.g. the wildcard badge appearing -- so the list/saved view's top offset
+  // is measured live instead of a fixed px guess that would clip content.
+  function syncListViewOffset() {
+    const topchrome = document.querySelector('.topchrome');
+    if (!topchrome) return;
+    document.documentElement.style.setProperty('--list-top', `${topchrome.offsetHeight + 8}px`);
+  }
+
   // ---------- Welcome screen ----------
   function initWelcome() {
     const welcome = $('#welcome');
@@ -28,7 +55,8 @@
     }
     $('#welcome-continue').addEventListener('click', () => {
       localStorage.setItem('roviq_seen_welcome', '1');
-      welcome.hidden = true;
+      welcome.classList.add('leaving');
+      welcome.addEventListener('transitionend', () => { welcome.hidden = true; }, { once: true });
     });
   }
 
@@ -45,7 +73,7 @@
 
   function showMapUnavailable(message) {
     $('#map').innerHTML =
-      '<div style="display:flex;align-items:center;justify-content:center;height:100%;padding:32px;text-align:center;font-family:Inter,sans-serif;color:#5B5A52;">' +
+      '<div style="display:flex;align-items:center;justify-content:center;height:100%;padding:32px;text-align:center;font-family:Inter,sans-serif;color:#9098A6;">' +
       message +
       '</div>';
   }
@@ -199,15 +227,15 @@
     });
   }
 
-  // ---------- List view ----------
-  function renderList() {
+  // ---------- List view (shared by category list and Saved) ----------
+  function renderPlaceCards(places, emptyMessage) {
     const list = $('#list-view');
-    if (!state.places.length) {
-      list.innerHTML = '<div style="text-align:center;color:var(--ink-soft);padding:40px 16px;font-size:13px;">No spots in this category yet.</div>';
+    if (!places.length) {
+      list.innerHTML = `<div class="list-empty-state">${escapeHtml(emptyMessage)}</div>`;
       return;
     }
-    list.innerHTML = state.places.map((place) => `
-      <button class="place-card" data-id="${place.id}" type="button">
+    list.innerHTML = places.map((place) => `
+      <div class="place-card texture-carbon" data-id="${place.id}" role="button" tabindex="0">
         <div class="place-photo" style="${place.photo_url ? `background-image:url('${escapeAttr(place.photo_url)}')` : ''}">
           ${place.photo_url ? '' : (CATEGORY_EMOJI[place.category] || '📍')}
         </div>
@@ -216,15 +244,51 @@
           <div class="place-meta mono">${escapeHtml(place.category)}${place.address ? ' · ' + escapeHtml(place.address) : ''}</div>
           <div class="place-desc">${escapeHtml(place.description || '')}</div>
         </div>
-      </button>
+        <button class="save-flag" data-save-id="${place.id}" type="button" title="Save">${state.saved.has(place.id) ? '★' : '☆'}</button>
+      </div>
     `).join('');
 
-    list.querySelectorAll('.place-card').forEach((card) => {
-      card.addEventListener('click', () => {
-        const place = state.places.find((p) => String(p.id) === card.dataset.id);
-        if (place) openSheet(place);
+    list.querySelectorAll('.save-flag').forEach((star) => {
+      star.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = Number(star.dataset.saveId);
+        if (state.saved.has(id)) state.saved.delete(id);
+        else state.saved.add(id);
+        localStorage.setItem('roviq_saved', JSON.stringify([...state.saved]));
+        star.textContent = state.saved.has(id) ? '★' : '☆';
+        if (state.activePlace && state.activePlace.id === id) updateSaveButton();
+        if (state.view === 'saved' && !state.saved.has(id)) star.closest('.place-card').remove();
       });
     });
+
+    list.querySelectorAll('.place-card').forEach((card) => {
+      const open = () => {
+        const place = places.find((p) => String(p.id) === card.dataset.id);
+        if (place) openSheet(place);
+      };
+      card.addEventListener('click', open);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+      });
+    });
+  }
+
+  function renderList() {
+    renderPlaceCards(state.places, 'No spots in this category yet.');
+  }
+
+  async function loadSaved() {
+    const list = $('#list-view');
+    if (!state.saved.size) {
+      renderPlaceCards([], "Nothing saved yet — tap the star on a spot to save it here.");
+      return;
+    }
+    list.innerHTML = '<div class="list-empty-state">Loading your saved spots…</div>';
+    const res = await fetch('/api/places?status=approved');
+    const data = res.ok ? await res.json() : null;
+    const all = (data && data.success) ? data.places : [];
+    const saved = all.filter((p) => state.saved.has(p.id));
+    renderPlaceCards(saved, "Nothing saved yet — tap the star on a spot to save it here.");
   }
 
   function escapeHtml(str) {
@@ -309,8 +373,15 @@
     state.view = view;
     $('#toggle-map').classList.toggle('active', view === 'map');
     $('#toggle-list').classList.toggle('active', view === 'list');
-    $('#map').style.display = view === 'map' ? '' : 'none';
-    $('#list-view').hidden = view !== 'list';
+    $('#toggle-saved').classList.toggle('active', view === 'saved');
+    $('#map').classList.toggle('view-hidden', view !== 'map');
+    $('#list-view').hidden = false;
+    $('#list-view').classList.toggle('view-hidden', view === 'map');
+    $('#chips').hidden = view === 'saved';
+    requestAnimationFrame(syncListViewOffset);
+
+    if (view === 'saved') loadSaved();
+    else if (view === 'list') renderList();
   }
 
   // ---------- Category chips ----------
@@ -326,10 +397,19 @@
   }
 
   // ---------- Suggest-a-spot panel ----------
+  function openPanel(panel) {
+    panel.hidden = false;
+    requestAnimationFrame(() => panel.classList.add('open'));
+  }
+  function closePanel(panel) {
+    panel.classList.remove('open');
+    panel.addEventListener('transitionend', () => { panel.hidden = true; }, { once: true });
+  }
+
   function initSuggestPanel() {
     const panel = $('#suggest-panel');
-    $('#open-suggest').addEventListener('click', () => { panel.hidden = false; });
-    $('#close-suggest').addEventListener('click', () => { panel.hidden = true; });
+    $('#open-suggest').addEventListener('click', () => openPanel(panel));
+    $('#close-suggest').addEventListener('click', () => closePanel(panel));
 
     let selectedCategory = null;
     $('#f-category-pills').addEventListener('click', (e) => {
@@ -386,7 +466,7 @@
         e.target.reset();
         document.querySelectorAll('#f-category-pills .cat-pill').forEach((p) => p.classList.remove('sel'));
         selectedCategory = null;
-        setTimeout(() => { panel.hidden = true; msg.textContent = ''; }, 1400);
+        setTimeout(() => { closePanel(panel); msg.textContent = ''; }, 1400);
       } catch (err) {
         msg.textContent = 'Something went wrong — try again.';
         msg.classList.add('error');
@@ -411,12 +491,17 @@
 
   // ---------- Wire up ----------
   function init() {
+    applyThemeMode();
+    setInterval(applyThemeMode, 5 * 60 * 1000);
+    window.addEventListener('resize', syncListViewOffset);
+
     initWelcome();
     initChips();
     initSuggestPanel();
 
     $('#toggle-map').addEventListener('click', () => setView('map'));
     $('#toggle-list').addEventListener('click', () => setView('list'));
+    $('#toggle-saved').addEventListener('click', () => setView('saved'));
     $('#sheet-backdrop').addEventListener('click', closeSheet);
     $('#sheet-save').addEventListener('click', toggleSave);
     $('#sheet-directions').addEventListener('click', openDirectionsSheet);
