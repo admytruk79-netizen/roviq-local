@@ -14,5 +14,9 @@ binding = "DB"
 database_name = "roviq-local2"
 database_id = "02852e71-7a65-4fd1-b0ff-2dfc648bb071"
 
+[ai]
+binding = "AI"
+
 # Runtime variables/secrets are configured in Cloudflare for this Worker:
 #   ADMIN_PASSCODE      shared curator passcode for the /admin tools
+#   CRON_SECRET         optional bearer secret for manual cron endpoint calls
