@@ -1,0 +1,49 @@
+@media(max-width:759px){
+  /* Keep the map as the primary surface when a place is selected. */
+  .place-preview{
+    left:12px!important;
+    right:12px!important;
+    bottom:82px!important;
+    max-height:235px!important;
+    min-height:0!important;
+    padding:14px 14px 12px!important;
+    border-radius:18px!important;
+    overflow:auto!important;
+    overscroll-behavior:contain;
+  }
+  .place-preview h3{
+    margin:3px 42px 2px 0!important;
+    font-size:19px!important;
+    line-height:1.15!important;
+  }
+  .place-preview .meta{margin-top:3px!important}
+  .place-preview p{
+    margin:8px 0 0!important;
+    display:-webkit-box;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:2;
+    overflow:hidden;
+    line-height:1.38!important;
+  }
+  .place-preview .preview-actions{
+    position:sticky!important;
+    bottom:0!important;
+    margin-top:10px!important;
+    padding-top:8px!important;
+    background:linear-gradient(180deg,rgba(13,34,57,0),rgba(13,34,57,.98) 25%)!important;
+  }
+  .place-preview .preview-actions button{min-height:42px!important}
+
+  /* Leaflet controls must never sit on top of the selected-place card. */
+  #map .leaflet-bottom.leaflet-right{bottom:330px!important}
+  #map .roviq-locate-control{bottom:auto!important}
+
+  /* Keep the map visually dominant while the card is open. */
+  #map:has(.place-preview) .drive-hud{opacity:.82}
+}
+
+@media(max-width:420px){
+  .place-preview{max-height:218px!important}
+  .place-preview p{-webkit-line-clamp:1}
+  #map .leaflet-bottom.leaflet-right{bottom:312px!important}
+}
