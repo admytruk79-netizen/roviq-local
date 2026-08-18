@@ -41,10 +41,11 @@ jobs:
         run: |
           npx wrangler d1 execute roviq-local2 --remote --command="SELECT status, COUNT(*) AS count FROM places GROUP BY status;"
 
-      - name: Smoke test live API
+      - name: Smoke test live API and AI admin
         shell: bash
         run: |
-          sleep 4
+          sleep 6
+
           HEALTH="$(curl --fail --show-error --silent "https://roviq-local2.admytruk79.workers.dev/api/health")"
           echo "$HEALTH"
           echo "$HEALTH" | grep -q '"success":true'
@@ -53,3 +54,16 @@ jobs:
           echo "$RESPONSE" | head -c 2500
           echo
           printf '%s' "$RESPONSE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const x=JSON.parse(s);if(!x.success||!Array.isArray(x.places)||x.places.length<1){console.error("Live API returned no approved places");process.exit(1)}console.log(`Live API approved places: ${x.places.length}`)})'
+
+          ADMIN_HTML="$(curl --fail --show-error --silent "https://roviq-local2.admytruk79.workers.dev/admin/")"
+          printf '%s' "$ADMIN_HTML" | grep -q 'AI Maintenance'
+
+          AI_HTML="$(curl --fail --show-error --silent "https://roviq-local2.admytruk79.workers.dev/admin/ai.html")"
+          printf '%s' "$AI_HTML" | grep -q 'AI Maintenance'
+          printf '%s' "$AI_HTML" | grep -q 'Run check'
+
+          AI_STATUS="$(curl --silent --output /dev/null --write-out '%{http_code}' "https://roviq-local2.admytruk79.workers.dev/api/admin/ai-maintenance")"
+          case "$AI_STATUS" in
+            200|401|403) echo "AI maintenance API route is present: HTTP $AI_STATUS" ;;
+            *) echo "AI maintenance API route missing or unhealthy: HTTP $AI_STATUS"; exit 1 ;;
+          esac
