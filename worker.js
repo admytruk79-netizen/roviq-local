@@ -34,6 +34,19 @@ async function run(module, request, env, params = {}) {
   return handler({ request, env, params });
 }
 
+async function assetResponse(request, env, path) {
+  const response = await env.ASSETS.fetch(request);
+  if (!response || response.status >= 400) return response;
+  const headers = new Headers(response.headers);
+  const isMutable = path === '/' || path.startsWith('/admin') || path.endsWith('.html') || path.endsWith('.js') || path.endsWith('.css');
+  if (isMutable) {
+    headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    headers.set('Pragma', 'no-cache');
+    headers.set('Expires', '0');
+  }
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -71,7 +84,7 @@ export default {
       return Response.json({ success: false, error: 'not found' }, { status: 404 });
     }
 
-    return env.ASSETS.fetch(request);
+    return assetResponse(request, env, path);
   },
 
   async scheduled(controller, env, ctx) {
@@ -80,7 +93,6 @@ export default {
       if (!response.ok) console.error('ROVIQ Local stale-submission cron failed', response.status, await response.text());
     }).catch((error) => console.error('ROVIQ Local stale-submission cron error', error)));
 
-    // Keep the AI worker economical: run every six hours on the existing hourly trigger.
     const hour = new Date(controller.scheduledTime || Date.now()).getUTCHours();
     if (hour % 6 === 0) {
       const headers = env.CRON_SECRET ? { Authorization: `Bearer ${env.CRON_SECRET}` } : {};
