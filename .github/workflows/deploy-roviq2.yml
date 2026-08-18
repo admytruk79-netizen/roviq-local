@@ -34,4 +34,7 @@ jobs:
         run: npm install
 
       - name: Deploy Worker and assets
-        run: npm run deploy
+        run: |
+          npx wrangler deploy \
+            --var GIT_COMMIT:"$GITHUB_SHA" \
+            --var BUILD_TIME:"$(date -u +%Y-%m-%dT%H:%M:%SZ)"

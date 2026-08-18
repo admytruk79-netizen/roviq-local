@@ -4,6 +4,7 @@ import * as placeView from './functions/api/places/[id]/view.js';
 import * as advisories from './functions/api/advisories/index.js';
 import * as config from './functions/api/config.js';
 import * as health from './functions/api/health.js';
+import * as version from './functions/api/version.js';
 import * as geocode from './functions/api/geocode.js';
 import * as me from './functions/api/me.js';
 import * as adminQueue from './functions/api/admin/queue.js';
@@ -54,6 +55,7 @@ export default {
 
     if (path === '/api/config') return run(config, request, env);
     if (path === '/api/health') return run(health, request, env);
+    if (path === '/api/version') return run(version, request, env);
     if (path === '/api/geocode') return run(geocode, request, env);
     if (path === '/api/places') return run(places, request, env);
     if (path === '/api/advisories') return run(advisories, request, env);

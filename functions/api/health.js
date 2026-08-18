@@ -12,12 +12,13 @@ export async function onRequestGet({ env }) {
 
   const checks = {
     database,
-    mapping_provider: 'openstreetmap-leaflet',
+    mapping_provider: 'stadia-maplibre-leaflet',
     admin_configured: Boolean(env.ADMIN_PASSCODE)
   };
 
-  // Mapping uses public OpenStreetMap tiles + Leaflet and requires no Mapbox token.
-  // Database availability is the only required backend health dependency here.
+  // Mapping uses Stadia Maps vector tiles rendered via MapLibre GL, mounted
+  // inside Leaflet as the outer map/marker API. Database availability is the
+  // only required backend health dependency here.
   const healthy = checks.database;
 
   return Response.json(
