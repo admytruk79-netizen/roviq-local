@@ -172,7 +172,7 @@
           if (coords) {
             url.searchParams.set('lat', coords.lat);
             url.searchParams.set('lng', coords.lng);
-            if (!url.searchParams.has('radius_km')) url.searchParams.set('radius_km', '100');
+            if (!url.searchParams.has('radius_km')) url.searchParams.set('radius_km', '40');
           } else if (scope.city) {
             url.searchParams.set('city', scope.city);
             if (scope.country_code) url.searchParams.set('country_code', scope.country_code);
