@@ -14,7 +14,9 @@ import * as adminPlace from './functions/api/admin/places/[id].js';
 import * as adminAdvisories from './functions/api/admin/advisories/index.js';
 import * as adminAdvisory from './functions/api/admin/advisories/[id].js';
 import * as adminCurators from './functions/api/admin/curators.js';
+import * as adminAiMaintenance from './functions/api/admin/ai-maintenance.js';
 import * as staleSubmissions from './functions/api/cron/stale-submissions.js';
+import * as aiMaintenance from './functions/api/cron/ai-maintenance.js';
 
 function methodHandler(module, method) {
   const name = `onRequest${method.charAt(0)}${method.slice(1).toLowerCase()}`;
@@ -49,7 +51,9 @@ export default {
     if (path === '/api/admin/places') return run(adminPlaces, request, env);
     if (path === '/api/admin/advisories') return run(adminAdvisories, request, env);
     if (path === '/api/admin/curators') return run(adminCurators, request, env);
+    if (path === '/api/admin/ai-maintenance') return run(adminAiMaintenance, request, env);
     if (path === '/api/cron/stale-submissions') return run(staleSubmissions, request, env);
+    if (path === '/api/cron/ai-maintenance') return run(aiMaintenance, request, env);
 
     let match = path.match(/^\/api\/places\/(\d+)\/view$/);
     if (match) return run(placeView, request, env, { id: match[1] });
@@ -71,9 +75,19 @@ export default {
   },
 
   async scheduled(controller, env, ctx) {
-    const request = new Request('https://roviq-local2.internal/api/cron/stale-submissions', { method: 'GET' });
-    ctx.waitUntil(staleSubmissions.onRequestGet({ request, env }).then(async (response) => {
+    const staleRequest = new Request('https://roviq-local2.internal/api/cron/stale-submissions', { method: 'GET' });
+    ctx.waitUntil(staleSubmissions.onRequestGet({ request: staleRequest, env }).then(async (response) => {
       if (!response.ok) console.error('ROVIQ Local stale-submission cron failed', response.status, await response.text());
     }).catch((error) => console.error('ROVIQ Local stale-submission cron error', error)));
+
+    // Keep the AI worker economical: run every six hours on the existing hourly trigger.
+    const hour = new Date(controller.scheduledTime || Date.now()).getUTCHours();
+    if (hour % 6 === 0) {
+      const headers = env.CRON_SECRET ? { Authorization: `Bearer ${env.CRON_SECRET}` } : {};
+      const aiRequest = new Request('https://roviq-local2.internal/api/cron/ai-maintenance', { method: 'GET', headers });
+      ctx.waitUntil(aiMaintenance.onRequestGet({ request: aiRequest, env }).then(async (response) => {
+        if (!response.ok) console.error('ROVIQ Local AI maintenance cron failed', response.status, await response.text());
+      }).catch((error) => console.error('ROVIQ Local AI maintenance cron error', error)));
+    }
   }
 };
