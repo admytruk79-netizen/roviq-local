@@ -5,6 +5,7 @@ import * as advisories from './functions/api/advisories/index.js';
 import * as config from './functions/api/config.js';
 import * as health from './functions/api/health.js';
 import * as geocode from './functions/api/geocode.js';
+import * as me from './functions/api/me.js';
 import * as adminQueue from './functions/api/admin/queue.js';
 import * as adminModerate from './functions/api/admin/moderate.js';
 import * as adminActivity from './functions/api/admin/activity.js';
@@ -12,6 +13,7 @@ import * as adminPlaces from './functions/api/admin/places/index.js';
 import * as adminPlace from './functions/api/admin/places/[id].js';
 import * as adminAdvisories from './functions/api/admin/advisories/index.js';
 import * as adminAdvisory from './functions/api/admin/advisories/[id].js';
+import * as adminCurators from './functions/api/admin/curators.js';
 import * as staleSubmissions from './functions/api/cron/stale-submissions.js';
 
 function methodHandler(module, method) {
@@ -40,11 +42,13 @@ export default {
     if (path === '/api/geocode') return run(geocode, request, env);
     if (path === '/api/places') return run(places, request, env);
     if (path === '/api/advisories') return run(advisories, request, env);
+    if (path === '/api/me') return run(me, request, env);
     if (path === '/api/admin/queue') return run(adminQueue, request, env);
     if (path === '/api/admin/moderate') return run(adminModerate, request, env);
     if (path === '/api/admin/activity') return run(adminActivity, request, env);
     if (path === '/api/admin/places') return run(adminPlaces, request, env);
     if (path === '/api/admin/advisories') return run(adminAdvisories, request, env);
+    if (path === '/api/admin/curators') return run(adminCurators, request, env);
     if (path === '/api/cron/stale-submissions') return run(staleSubmissions, request, env);
 
     let match = path.match(/^\/api\/places\/(\d+)\/view$/);

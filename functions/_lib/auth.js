@@ -83,6 +83,14 @@ export async function requireModerator(request, env, allowedRoles = ['curator','
   return { response: null, actor };
 }
 
+// Any authenticated contributor (verified driver and above) may submit places.
+// Visitors without a ROVIQ access token cannot publish places.
+export async function requireContributor(request, env) {
+  const actor = await authenticateModerator(request, env);
+  if (!actor) return { response: unauthorized('A verified ROVIQ contributor account is required to submit a place.'), actor: null };
+  return { response: null, actor };
+}
+
 export function canModeratePlace(actor, place) {
   if (!actor) return false;
   if (actor.role === 'super_admin') return true;

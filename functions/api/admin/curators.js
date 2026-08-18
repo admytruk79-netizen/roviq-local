@@ -17,7 +17,7 @@ export async function onRequestGet({ request, env }) {
            cc.active AS credential_active,cc.created_at,cc.last_used_at
     FROM contributors c
     LEFT JOIN curator_credentials cc ON cc.contributor_id=c.id
-    WHERE c.role IN ('curator','regional_admin','super_admin')
+    WHERE c.role IN ('contributor','city_curator','regional_admin','super_admin')
     ORDER BY c.role DESC,c.handle ASC
   `).all();
   const users = out.results || [];
@@ -50,9 +50,9 @@ export async function onRequestPost({ request, env }) {
   const handle = String(body.handle || '').trim().slice(0,80);
   const displayName = String(body.display_name || '').trim().slice(0,120) || null;
   const email = String(body.email || '').trim().slice(0,180) || null;
-  const role = String(body.role || 'curator');
+  const role = String(body.role || 'contributor');
   if (!handle) return Response.json({success:false,error:'handle required'},{status:400});
-  if (!['curator','regional_admin','super_admin'].includes(role)) return Response.json({success:false,error:'invalid role'},{status:400});
+  if (!['contributor','city_curator','regional_admin','super_admin'].includes(role)) return Response.json({success:false,error:'invalid role'},{status:400});
 
   await env.DB.prepare(`INSERT INTO contributors(handle,display_name,email,role,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(handle) DO UPDATE SET display_name=excluded.display_name,email=excluded.email,role=excluded.role,updated_at=excluded.updated_at`)
     .bind(handle,displayName,email,role,new Date().toISOString()).run();
@@ -62,13 +62,13 @@ export async function onRequestPost({ request, env }) {
   await env.DB.prepare(`INSERT INTO curator_credentials(contributor_id,token_hash,active) VALUES(?,?,1) ON CONFLICT(contributor_id) DO UPDATE SET token_hash=excluded.token_hash,active=1,created_at=CURRENT_TIMESTAMP`)
     .bind(contributor.id,tokenHash).run();
 
-  if (role !== 'super_admin') {
+  if (['city_curator','regional_admin'].includes(role)) {
     const a = body.assignment || {};
     const country = String(a.country_code || '').trim().slice(0,8) || null;
     const region = String(a.region || '').trim().slice(0,120) || null;
     const city = String(a.city || '').trim().slice(0,120) || null;
     const market = String(a.market_slug || '').trim().slice(0,160) || null;
-    if (!country && !region && !city && !market) return Response.json({success:false,error:'market assignment required for non-super-admin'},{status:400});
+    if (!country && !region && !city && !market) return Response.json({success:false,error:'market assignment required for city curators and regional admins'},{status:400});
     await env.DB.prepare(`INSERT INTO curator_assignments(contributor_id,country_code,region,city,market_slug,active) VALUES(?,?,?,?,?,1)`)
       .bind(contributor.id,country,region,city,market).run();
   }
