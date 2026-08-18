@@ -92,16 +92,7 @@ async function submit(e) {
   }
 }
 
-function loadStadiaPrototype(){
-  if(document.querySelector('script[data-roviq-stadia]')) return;
-  const s=document.createElement('script');
-  s.src='/js/stadia-vector.js?v=20260818-1';
-  s.dataset.roviqStadia='1';
-  document.head.appendChild(s);
-}
-
 function init() {
-  loadStadiaPrototype();
   const entry = document.querySelector('.advisory-entry');
   if (entry) {
     const button = document.createElement('button');
