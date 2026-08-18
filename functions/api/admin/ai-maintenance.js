@@ -1,8 +1,10 @@
 import { requireModerator } from '../../_lib/auth.js';
+import { ensureAiMaintenanceSchema } from '../../_lib/ai-schema.js';
 import { analyzeObservation, enqueueFinding, runMaintenanceBatch } from '../../_lib/ai-maintenance.js';
 
 export async function onRequestGet({request,env}){
   const {response,actor}=await requireModerator(request,env);if(response)return response;
+  await ensureAiMaintenanceSchema(env);
   const status=new URL(request.url).searchParams.get('status')||'pending';
   const out=await env.DB.prepare(`SELECT q.*,p.name,p.city,p.region,p.category,p.website_url FROM ai_maintenance_queue q JOIN places p ON p.id=q.place_id WHERE q.status=? ORDER BY q.priority DESC,q.created_at ASC LIMIT 200`).bind(status).all();
   const counts=await env.DB.prepare(`SELECT status,COUNT(*) count FROM ai_maintenance_queue GROUP BY status`).all();
@@ -11,6 +13,7 @@ export async function onRequestGet({request,env}){
 
 export async function onRequestPost({request,env}){
   const {response,actor}=await requireModerator(request,env);if(response)return response;
+  await ensureAiMaintenanceSchema(env);
   const body=await request.json().catch(()=>({}));
   if(body.action==='run'){
     const result=await runMaintenanceBatch(env,{limit:Math.min(25,Math.max(1,Number(body.limit)||10)),staleDays:Math.min(365,Math.max(7,Number(body.stale_days)||30))});
