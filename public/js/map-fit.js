@@ -97,7 +97,12 @@
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
       placeLiveUserMarker(lat, lng);
-      map.setView([lat, lng], LOCATE_ZOOM, { animate: true });
+      const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+      if (reduceMotion || typeof map.flyTo !== 'function') {
+        map.setView([lat, lng], LOCATE_ZOOM, { animate: !reduceMotion });
+      } else {
+        map.flyTo([lat, lng], LOCATE_ZOOM, { animate: true, duration: 0.9, easeLinearity: 0.25 });
+      }
       locateButton?.classList.remove('locating');
       locateButton?.setAttribute('aria-label', 'Center map on my location');
     }, () => {
@@ -131,7 +136,13 @@
       const map = window.__ROVIQ_MAP_INSTANCE;
       if (!map) return;
       const a = Number(lat), b = Number(lng);
-      if (Number.isFinite(a) && Number.isFinite(b)) map.setView([a, b], PLACE_ZOOM, { animate: true });
+      if (!Number.isFinite(a) || !Number.isFinite(b)) return;
+      const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+      if (reduceMotion || typeof map.flyTo !== 'function') {
+        map.setView([a, b], PLACE_ZOOM, { animate: !reduceMotion });
+      } else {
+        map.flyTo([a, b], PLACE_ZOOM, { animate: true, duration: 0.85, easeLinearity: 0.25 });
+      }
     },
     locate: locateMe
   };
