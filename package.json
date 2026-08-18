@@ -1,6 +1,6 @@
 {
   "name": "roviq-local",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "ROVIQ Local — a global driver-curated, map-based local discovery guide.",
   "scripts": {
@@ -15,6 +15,6 @@
     "db:bootstrap:remote": "npm run db:migrate:remote && npm run db:migrate:platform:remote && npm run db:seed:remote"
   },
   "devDependencies": {
-    "wrangler": "^3.90.0"
+    "wrangler": "^4.68.1"
   }
 }
