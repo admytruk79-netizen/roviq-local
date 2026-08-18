@@ -4,6 +4,12 @@ A driver-curated, map-based local guide for rideshare visitors to Portland,
 OR. Free for riders, driver-first distribution, sponsorship-funded by shops
 later. See the original build brief for full product context.
 
+> **Start here:** [`PRODUCT_CONSTITUTION.md`](./PRODUCT_CONSTITUTION.md) is
+> the canonical product/experience/technical spec for ROVIQ Local — mission,
+> REST/EXPLORE/WILD modes, visual/color system, trust & moderation model,
+> what AI is and is not allowed to do, and what must never be destroyed. Read
+> it before making product or design decisions in this repo.
+
 ## Stack
 
 - **Frontend**: static single-page app — plain HTML/CSS/JS, no build step —
