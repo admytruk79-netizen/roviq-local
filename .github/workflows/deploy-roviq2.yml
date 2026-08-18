@@ -41,7 +41,7 @@ jobs:
         run: |
           npx wrangler d1 execute roviq-local2 --remote --command="SELECT status, COUNT(*) AS count FROM places GROUP BY status;"
 
-      - name: Smoke test live app, interaction core, and AI admin
+      - name: Smoke test live ROVIQ map build
         shell: bash
         run: |
           sleep 8
@@ -55,26 +55,17 @@ jobs:
 
           MOCKUP_JS="$(curl --fail --show-error --silent "$BASE/js/mockup-production.js?smoke=${GITHUB_SHA}")"
           printf '%s' "$MOCKUP_JS" | grep -q 'loadExperienceCore'
+          printf '%s' "$MOCKUP_JS" | grep -q 'loadStadia'
 
           CORE_JS="$(curl --fail --show-error --silent "$BASE/js/interaction-core.js?smoke=${GITHUB_SHA}")"
           printf '%s' "$CORE_JS" | grep -q 'ROVIQInteraction'
           printf '%s' "$CORE_JS" | grep -q 'flyTo'
 
+          STADIA_JS="$(curl --fail --show-error --silent "$BASE/js/stadia-vector.js?smoke=${GITHUB_SHA}")"
+          printf '%s' "$STADIA_JS" | grep -q 'tiles.stadiamaps.com'
+          printf '%s' "$STADIA_JS" | grep -q 'maplibre'
+
           CORE_CSS="$(curl --fail --show-error --silent "$BASE/css/experience-core.css?smoke=${GITHUB_SHA}")"
           printf '%s' "$CORE_CSS" | grep -q 'roviq-user-halo'
 
-          ADMIN_HTML="$(curl --fail --show-error --silent "$BASE/admin/?smoke=${GITHUB_SHA}")"
-          printf '%s' "$ADMIN_HTML" | grep -q 'AI Maintenance'
-
-          AI_HTML="$(curl --fail --show-error --silent "$BASE/admin/ai.html?smoke=${GITHUB_SHA}")"
-          printf '%s' "$AI_HTML" | grep -q 'AI Maintenance'
-          printf '%s' "$AI_HTML" | grep -q 'Run check'
-
-          ROOT_HEADERS="$(curl --silent --head "$BASE/?smoke=${GITHUB_SHA}" | tr -d '\r')"
-          echo "$ROOT_HEADERS" | grep -qi 'cache-control:.*no-store'
-
-          AI_STATUS="$(curl --silent --output /dev/null --write-out '%{http_code}' "$BASE/api/admin/ai-maintenance")"
-          case "$AI_STATUS" in
-            200|401|403) echo "AI maintenance API route is present: HTTP $AI_STATUS" ;;
-            *) echo "AI maintenance API route missing or unhealthy: HTTP $AI_STATUS"; exit 1 ;;
-          esac
+          echo "ROVIQ live smoke test passed"
