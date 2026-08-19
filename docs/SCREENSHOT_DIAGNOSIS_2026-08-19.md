@@ -1,0 +1,1 @@
+Screenshot symptom: a road-following teal polyline is visible and HUD shows 2 min / 670 m, while instruction says “Could not calculate a drivable route.” This proves route calculation succeeded. The false error was caused by presentation code after route success, not by OSRM route calculation. Fixed in app-v3.js.

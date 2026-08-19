@@ -1,0 +1,1 @@
+Invariant: once a valid driving route has been received, validated, drawn, and its ETA/distance displayed, noncritical UI/camera failures must not change navigation state to a route-calculation failure.
