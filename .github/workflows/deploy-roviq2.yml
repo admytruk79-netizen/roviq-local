@@ -37,6 +37,7 @@ jobs:
 
       - name: Deploy Worker and assets
         run: |
+          echo "Deploying ROVIQ Local production build"
           npx wrangler deploy \
             --var GIT_COMMIT:"$GITHUB_SHA" \
             --var BUILD_TIME:"$(date -u +%Y-%m-%dT%H:%M:%SZ)"
