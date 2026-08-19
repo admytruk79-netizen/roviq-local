@@ -1,0 +1,3 @@
+export async function loadApprovedPlaces(){const r=await fetch('/api/places?status=approved&scope=all',{cache:'no-store'});if(!r.ok)throw new Error(`places ${r.status}`);const d=await r.json();return Array.isArray(d?.places)?d.places:[]}
+export function savedIds(){try{return new Set(JSON.parse(localStorage.getItem('roviq_saved')||'[]').map(String))}catch{return new Set()}}
+export function toggleSaved(id){const s=savedIds(),k=String(id);s.has(k)?s.delete(k):s.add(k);localStorage.setItem('roviq_saved',JSON.stringify([...s]));return s.has(k)}
