@@ -1,0 +1,49 @@
+/* Final tidy pass: preserve MapLibre geographic transforms and reduce visual crowding. */
+:root{--rq-gold:#d8a85c;--rq-gold2:#f0c777;--rq-teal:#55ddca}
+
+/* IMPORTANT: MapLibre writes translate transforms inline on marker elements. Never replace them with decorative rotation. */
+.roviq-gl-marker,.roviq-runtime-marker{
+  transform:var(--rq-map-position)!important;
+  width:26px!important;height:26px!important;min-width:26px!important;min-height:26px!important;
+  border-radius:0!important;
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)!important;
+  background:rgba(5,16,24,.88)!important;
+  border:1px solid rgba(216,168,92,.76)!important;
+  box-shadow:0 5px 14px rgba(0,0,0,.34),inset 0 0 0 1px rgba(216,168,92,.05)!important;
+  overflow:hidden!important;
+  backdrop-filter:blur(6px)!important;
+}
+.roviq-gl-marker .rq-marker-icon,.roviq-runtime-marker .rq-marker-icon{
+  transform:none!important;width:100%!important;height:100%!important;
+  display:grid!important;place-items:center!important;
+  font:600 11px/1 Inter,sans-serif!important;
+}
+.roviq-gl-marker.selected,.roviq-runtime-marker.selected{
+  transform:var(--rq-map-position)!important;
+  border-color:var(--rq-teal)!important;
+  box-shadow:0 0 0 6px rgba(85,221,202,.10),0 0 18px rgba(85,221,202,.22)!important;
+}
+.roviq-gl-marker.roviq,.roviq-runtime-marker.roviq{background:rgba(58,39,15,.76)!important}
+
+/* Cleaner header and controls, closer to the approved reference proportions. */
+.topchrome{height:78px!important;padding:calc(14px + env(safe-area-inset-top)) 20px 0!important}
+.brand{font-size:24px!important;letter-spacing:.12em!important}
+.loc-badge{margin-top:6px!important;font-size:9px!important;letter-spacing:.12em!important}
+.mockup-tools{left:20px!important;top:calc(84px + env(safe-area-inset-top))!important;gap:8px!important}
+.mockup-discover{height:40px!important;padding:0 15px!important;border-radius:13px!important;font-size:13px!important}
+.mockup-wild{height:36px!important;padding:0 12px!important;font-size:10px!important}
+.chips{left:20px!important;top:calc(130px + env(safe-area-inset-top))!important;width:176px!important}
+
+.roviq-locate-native{left:20px!important;width:44px!important;height:44px!important;bottom:calc(80px + env(safe-area-inset-bottom))!important}
+.bottom-nav{height:64px!important;padding-left:24px!important;padding-right:24px!important}
+.bottom-nav button.mockup-center span{width:38px!important;height:38px!important}
+
+/* Prevent any decorative content from escaping map bounds. */
+#map,.maplibregl-map,.maplibregl-canvas-container{overflow:hidden!important}
+
+@media(max-width:380px){
+  .brand{font-size:22px!important}
+  .mockup-tools{left:16px!important}
+  .mockup-discover{padding:0 13px!important}
+  .mockup-wild{padding:0 10px!important}
+}
