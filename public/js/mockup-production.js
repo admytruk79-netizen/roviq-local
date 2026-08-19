@@ -5,8 +5,9 @@ const hadCoordsAtBoot=Number.isFinite(Number(initialScope.lat))&&Number.isFinite
 function ensureReferenceAssets(){
   if(!document.querySelector('link[data-rq-reference]')){const l=document.createElement('link');l.rel='stylesheet';l.href='/css/reference-ui.css?v=20260819-9';l.dataset.rqReference='1';document.head.appendChild(l)}
   if(!document.querySelector('link[data-rq-anchor-fix]')){const l=document.createElement('link');l.rel='stylesheet';l.href='/css/marker-anchor-mode-fix.css?v=20260819-1';l.dataset.rqAnchorFix='1';document.head.appendChild(l)}
+  if(!document.querySelector('link[data-rq-navigation]')){const l=document.createElement('link');l.rel='stylesheet';l.href='/css/navigation.css?v=20260819-1';l.dataset.rqNavigation='1';document.head.appendChild(l)}
   if(!document.querySelector('script[data-rq-reference]')){const s=document.createElement('script');s.src='/js/reference-ui.js?v=20260819-8';s.defer=true;s.dataset.rqReference='1';document.head.appendChild(s)}
-  if(!document.querySelector('script[data-rq-native-nav]')){const s=document.createElement('script');s.src='/js/native-navigation.js?v=20260819-1';s.defer=true;s.dataset.rqNativeNav='1';document.head.appendChild(s)}
+  if(!document.querySelector('script[data-rq-navigation]')){const s=document.createElement('script');s.src='/js/maplibre-gps-navigation.js?v=20260819-1';s.defer=true;s.dataset.rqNavigation='1';document.head.appendChild(s)}
 }
 function force(el,p,v){if(el)el.style.setProperty(p,v,'important')}
 function pinUi(){
