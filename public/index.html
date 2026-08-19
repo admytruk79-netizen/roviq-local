@@ -1,1 +1,97 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>ROVIQ Local — Worth stopping for</title><meta name="description" content="Curated, driver-relevant places worth stopping for wherever the road takes you."><meta name="theme-color" content="#07192d"><script>document.documentElement.classList.add('roviq-booting');try{if(localStorage.getItem('roviq_onboarding_complete_v1')==='1'&&sessionStorage.getItem('roviq_startup_seen_session'))document.documentElement.classList.remove('roviq-booting')}catch{}</script><style>html.roviq-booting body{background:#07192d}html.roviq-booting #app{visibility:hidden}</style><link rel="manifest" href="/manifest.json"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"><link rel="stylesheet" href="/css/styles.css"><link rel="stylesheet" href="/css/v2.css"><link rel="stylesheet" href="/css/product-redesign.css"><link rel="stylesheet" href="/css/theme-auto.css"><link rel="stylesheet" href="/css/mobile-list-fix.css"><link rel="stylesheet" href="/css/advisory.css"><link rel="stylesheet" href="/css/startup.css"><link rel="stylesheet" href="/css/onboarding.css"><link rel="stylesheet" href="/css/usability-fixes.css"><link rel="stylesheet" href="/css/mockup-production.css"><style>.curator-entry{position:fixed;right:16px;bottom:82px;z-index:900;border:1px solid rgba(202,164,88,.45);background:rgba(7,25,45,.94);color:#d8b86b;border-radius:999px;padding:10px 14px;font:600 11px Inter,sans-serif;letter-spacing:.03em;text-decoration:none;box-shadow:0 6px 24px rgba(0,0,0,.22)}.curator-entry:hover{background:#0d2948}.curator-entry[hidden]{display:none}.leaflet-control-attribution a{pointer-events:none!important;text-decoration:none!important}</style></head><body><div id="app-status" class="sr-status" role="status" aria-live="polite"></div><div id="app"><div class="welcome" id="welcome" hidden></div><div id="map"></div><div class="list-view" id="list-view" hidden></div><header class="topchrome"><div class="brandrow"><div class="brand-group"><div class="brand">ROVIQ <span class="brass-text">Local</span></div><button class="loc-badge location-badge-button" id="loc-badge" type="button" aria-label="Change location">Near me</button></div><div class="view-toggle"><button id="toggle-map" class="active" type="button">Map</button><button id="toggle-list" type="button">List</button></div></div><div class="location-actions"><button id="near-me" class="location-action" type="button">◎ Near me</button><button id="change-location" class="location-action" type="button">Change location</button></div><div class="chips" id="chips"><button class="chip active" data-category="all" type="button">All</button><button class="chip" data-category="food" type="button">Food</button><button class="chip" data-category="coffee" type="button">Coffee</button><button class="chip" data-category="nature" type="button">Nature</button><button class="chip" data-category="culture" type="button">Culture</button><button class="chip" data-category="breweries" type="button">Breweries</button></div></header><button class="fab-suggest" id="open-suggest" title="Suggest a spot" type="button">Suggest a Spot</button><a class="curator-entry" id="curator-entry" href="/admin/" hidden>◆ Curator Tools</a><div class="sheet-backdrop" id="sheet-backdrop"></div><div class="sheet" id="sheet"><div class="sheet-handle"></div><div class="sheet-photo" id="sheet-photo"></div><div class="sheet-body"><span class="sheet-tag" id="sheet-tag"></span><span class="sheet-pick-badge" id="sheet-pick-badge" hidden>◆ ROVIQ Pick</span><span class="sheet-trust-badge" id="sheet-trust-badge" hidden></span><h2 class="sheet-name" id="sheet-name"></h2><div class="sheet-status" id="sheet-status"></div><div class="sheet-hours" id="sheet-hours" hidden></div><h3 style="font-family:Cinzel,serif;margin:14px 0 4px">Why stop here?</h3><p class="sheet-desc" id="sheet-desc"></p><div class="sheet-actions"><button class="btn btn-outline" id="sheet-save" type="button">☆ Save</button><button class="btn btn-fir" id="sheet-directions" type="button">Directions</button></div></div></div><div class="sheet-backdrop" id="directions-backdrop"></div><div class="sheet directions-sheet" id="directions-sheet"><div class="sheet-handle"></div><div class="sheet-body"><h2 class="sheet-name">Open directions in</h2><div class="directions-choices"><a class="directions-choice" id="dir-google" href="#" target="_blank" rel="noopener">Google Maps</a><a class="directions-choice" id="dir-apple" href="#" target="_blank" rel="noopener">Apple Maps</a><a class="directions-choice" id="dir-waze" href="#" target="_blank" rel="noopener">Waze</a></div></div></div><div class="panel" id="suggest-panel" hidden><div class="panel-topbar"><button class="back-btn" id="close-suggest" type="button">←</button><h1>Suggest a Spot</h1></div><div class="panel-body"><div class="driver-auth" id="driver-auth"></div><form id="suggest-form" hidden><p class="submit-note" style="margin-top:0"><strong>Know somewhere worth stopping for?</strong><br>Recommend somewhere you'd genuinely send a driver or traveler. Suggestions are reviewed before appearing publicly.</p><div class="field"><label for="f-name">Place name</label><input type="text" id="f-name" placeholder="Place name" required></div><div class="field"><label for="f-category">Category</label><select id="f-category" required><option value="" selected disabled>Choose category</option><optgroup label="Food & Drink"><option value="food">Food</option><option value="coffee">Coffee</option><option value="breweries">Breweries</option><option value="markets">Markets & Shops</option></optgroup><optgroup label="Things to Do"><option value="nature">Nature</option><option value="scenic">Scenic Stops</option><option value="culture">Culture</option><option value="recreation">Recreation</option><option value="family">Family</option></optgroup><optgroup label="Journey"><option value="lodging">Lodging</option><option value="automotive">Automotive</option><option value="charging">Charging</option><option value="services">Services</option></optgroup><option value="other">Other</option></select></div><div class="field"><label for="f-desc">Why do you recommend it?</label><textarea id="f-desc" placeholder="I send people here when they want..." required></textarea></div><div class="field"><label for="f-recommend-for">Who do you usually recommend it to?</label><input type="text" id="f-recommend-for" placeholder="e.g. late-night riders, families, first-time visitors" required></div><div class="field"><label for="f-tip">Practical local tip (optional)</label><input type="text" id="f-tip" placeholder="Best time to go, parking, what to order..."></div><div class="field"><label>Location</label><div class="location-capture-actions"><button class="btn btn-outline" id="use-current-spot" type="button">◎ Use current location</button><button class="btn btn-outline" id="drop-pin-spot" type="button">⌖ Drop pin on map</button></div><input type="text" id="f-address" placeholder="Search address, place, city or area"><input type="hidden" id="f-lat"><input type="hidden" id="f-lng"><div class="submit-note" id="location-capture-status">Search for a place, use current location, or drop a pin.</div></div><div class="field"><label for="f-photo">Photo URL (optional)</label><input type="url" id="f-photo" placeholder="https://..."></div><button class="btn btn-fir" type="submit">Submit for review</button><div class="form-msg" id="form-msg"></div><div class="submit-note">Submissions enter the ROVIQ curator queue and remain unpublished until approved.</div><div class="submit-note advisory-entry"><strong>Something travelers should know?</strong><br>Journey Advisories are separate from place categories and cover access, closures, parking, seasonal conditions and other verified travel information. <span>Report a Journey Advisory →</span></div></form></div></div></div><script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script><script src="/js/startup.js"></script><script src="/js/onboarding.js"></script><script src="/js/global-bootstrap.js"></script><script src="/js/map-capture.js"></script><script src="/js/product-redesign.js"></script><script src="/js/map-fit.js"></script><script src="/js/suggest.js"></script><script src="/js/selected-halo.js"></script><script src="/js/mode-auto.js"></script><script src="/js/mockup-production.js"></script><script src="/js/advisory.js"></script><script>document.addEventListener('DOMContentLoaded',()=>{const e=document.getElementById('curator-entry');if(!e)return;const c=sessionStorage.getItem('roviq_admin_credential');e.hidden=!c;window.addEventListener('storage',()=>{e.hidden=!sessionStorage.getItem('roviq_admin_credential')});document.addEventListener('click',ev=>{const a=ev.target.closest('.leaflet-control-attribution a');if(a){ev.preventDefault();ev.stopPropagation();}},true);});</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>ROVIQ Local — Worth stopping for</title>
+  <meta name="description" content="Curated, driver-relevant places worth stopping for wherever the road takes you.">
+  <meta name="theme-color" content="#07192d">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/v2.css">
+  <link rel="stylesheet" href="/css/product-redesign.css">
+  <link rel="stylesheet" href="/css/theme-auto.css">
+  <link rel="stylesheet" href="/css/mobile-list-fix.css">
+  <link rel="stylesheet" href="/css/advisory.css">
+  <link rel="stylesheet" href="/css/startup.css">
+  <link rel="stylesheet" href="/css/onboarding.css">
+  <link rel="stylesheet" href="/css/usability-fixes.css">
+  <link rel="stylesheet" href="/css/mockup-production.css">
+  <style>
+    html,body,#app,#map{height:100%;margin:0}
+    body{overflow:hidden;background:#07192d}
+    #map{position:absolute;inset:0}
+    .curator-entry{position:fixed;right:16px;bottom:92px;z-index:1800;border:1px solid rgba(202,164,88,.45);background:rgba(7,25,45,.94);color:#d8b86b;border-radius:999px;padding:10px 14px;font:600 11px Inter,sans-serif;text-decoration:none}
+  </style>
+</head>
+<body>
+  <div id="app-status" class="sr-status" role="status" aria-live="polite"></div>
+  <div id="app">
+    <div class="welcome" id="welcome" hidden></div>
+    <div id="map"></div>
+    <div class="list-view" id="list-view" hidden></div>
+
+    <header class="topchrome">
+      <div class="brandrow">
+        <div class="brand-group">
+          <div class="brand">ROVIQ</div>
+          <button class="loc-badge location-badge-button" id="loc-badge" type="button" aria-label="Change location">PORTLAND, OREGON</button>
+        </div>
+        <div class="view-toggle">
+          <button id="toggle-map" class="active" type="button">Map</button>
+          <button id="toggle-list" type="button">List</button>
+        </div>
+      </div>
+      <div class="location-actions">
+        <button id="near-me" class="location-action" type="button">◎ Near me</button>
+        <button id="change-location" class="location-action" type="button">Change location</button>
+      </div>
+      <div class="chips" id="chips">
+        <button class="chip active" data-category="all" type="button">For You</button>
+        <button class="chip" data-category="picks" type="button">ROVIQ Picks</button>
+        <button class="chip" data-category="food" type="button">Food</button>
+        <button class="chip" data-category="coffee" type="button">Coffee</button>
+        <button class="chip" data-category="nature" type="button">See</button>
+      </div>
+    </header>
+
+    <button class="fab-suggest" id="open-suggest" title="Suggest a spot" type="button">Suggest</button>
+    <a class="curator-entry" id="curator-entry" href="/admin/" hidden>◆ Curator Tools</a>
+
+    <div class="panel" id="suggest-panel" hidden>
+      <div class="panel-topbar"><button class="back-btn" id="close-suggest" type="button">←</button><h1>Suggest a Spot</h1></div>
+      <div class="panel-body">
+        <div class="driver-auth" id="driver-auth"></div>
+        <form id="suggest-form" hidden>
+          <p class="submit-note"><strong>Know somewhere worth stopping for?</strong><br>Verified contributors can recommend places for curator review.</p>
+          <div class="field"><label for="f-name">Place name</label><input type="text" id="f-name" required></div>
+          <div class="field"><label for="f-category">Category</label><select id="f-category" required><option value="" selected disabled>Choose category</option><option value="food">Food</option><option value="coffee">Coffee</option><option value="nature">Nature</option><option value="culture">Culture</option><option value="breweries">Breweries</option><option value="automotive">Automotive</option><option value="charging">Charging</option><option value="other">Other</option></select></div>
+          <div class="field"><label for="f-desc">Why do you recommend it?</label><textarea id="f-desc" required></textarea></div>
+          <div class="field"><label for="f-recommend-for">Who is it good for?</label><input type="text" id="f-recommend-for" required></div>
+          <div class="field"><label for="f-tip">Local tip</label><input type="text" id="f-tip"></div>
+          <div class="field"><label>Location</label><div class="location-capture-actions"><button class="btn btn-outline" id="use-current-spot" type="button">◎ Use current location</button><button class="btn btn-outline" id="drop-pin-spot" type="button">⌖ Drop pin on map</button></div><input type="text" id="f-address" placeholder="Search address, place, city or area"><input type="hidden" id="f-lat"><input type="hidden" id="f-lng"><div class="submit-note" id="location-capture-status">Search for a place, use current location, or drop a pin.</div></div>
+          <div class="field"><label for="f-photo">Photo URL</label><input type="url" id="f-photo"></div>
+          <button class="btn btn-fir" type="submit">Submit for review</button>
+          <div class="form-msg" id="form-msg"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/startup.js?v=20260818-3"></script>
+  <script src="/js/onboarding.js?v=20260818-3"></script>
+  <script src="/js/global-bootstrap.js?v=20260818-3"></script>
+  <script src="/js/mode-auto.js?v=20260818-3"></script>
+  <script src="/js/mockup-production.js?v=20260818-3"></script>
+  <script src="/js/suggest.js?v=20260818-3"></script>
+  <script src="/js/advisory.js?v=20260818-3"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded',()=>{
+      const e=document.getElementById('curator-entry');
+      if(e)e.hidden=!sessionStorage.getItem('roviq_admin_credential');
+    });
+  </script>
+</body>
+</html>
