@@ -167,7 +167,9 @@
     if (url.origin === location.origin && url.pathname === '/api/places') {
       const method = String(init?.method || 'GET').toUpperCase();
       if (method === 'GET') {
-        if (!url.searchParams.has('lat') && !url.searchParams.has('city') && !url.searchParams.has('market')) {
+        const bypassScope = url.searchParams.get('scope') === 'all';
+        if (bypassScope) url.searchParams.delete('scope');
+        if (!bypassScope && !url.searchParams.has('lat') && !url.searchParams.has('city') && !url.searchParams.has('market')) {
           const coords = currentCoords();
           if (coords) {
             url.searchParams.set('lat', coords.lat);
