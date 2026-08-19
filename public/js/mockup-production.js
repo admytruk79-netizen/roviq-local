@@ -3,7 +3,7 @@ const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const initialScope=window.__ROVIQ_LOCATION_SCOPE||{};
 const hadCoordsAtBoot=Number.isFinite(Number(initialScope.lat))&&Number.isFinite(Number(initialScope.lng));
 function ensureReferenceAssets(){
-  if(!document.querySelector('link[data-rq-reference]')){const l=document.createElement('link');l.rel='stylesheet';l.href='/css/reference-ui.css?v=20260819-8';l.dataset.rqReference='1';document.head.appendChild(l)}
+  if(!document.querySelector('link[data-rq-reference]')){const l=document.createElement('link');l.rel='stylesheet';l.href='/css/reference-ui.css?v=20260819-9';l.dataset.rqReference='1';document.head.appendChild(l)}
   if(!document.querySelector('link[data-rq-anchor-fix]')){const l=document.createElement('link');l.rel='stylesheet';l.href='/css/marker-anchor-mode-fix.css?v=20260819-1';l.dataset.rqAnchorFix='1';document.head.appendChild(l)}
   if(!document.querySelector('script[data-rq-reference]')){const s=document.createElement('script');s.src='/js/reference-ui.js?v=20260819-8';s.defer=true;s.dataset.rqReference='1';document.head.appendChild(s)}
 }
