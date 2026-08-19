@@ -1,6 +1,6 @@
 {
   "name": "roviq-local",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "private": true,
   "description": "ROVIQ Local — a global driver-curated, map-based local discovery guide.",
   "scripts": {
