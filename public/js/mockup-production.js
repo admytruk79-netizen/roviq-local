@@ -19,14 +19,14 @@ async function restorePlaces(){
   await new Promise(r=>setTimeout(r,700));
   if(document.querySelector('.roviq-gl-marker')){clearFallback();return}
   let places=Array.isArray(window.__roviqPlaces)?window.__roviqPlaces:[];
-  if(!places.length){try{const res=await fetch('/api/places?status=approved',{cache:'no-store'}),data=await res.json();if(res.ok&&data?.success&&Array.isArray(data.places))places=data.places}catch(e){console.error('ROVIQ place recovery fetch failed',e)}}
+  if(!places.length){try{const res=await fetch('/api/places?status=approved&scope=all',{cache:'no-store'}),data=await res.json();if(res.ok&&data?.success&&Array.isArray(data.places))places=data.places}catch(e){console.error('ROVIQ place recovery fetch failed',e)}}
   window.__roviqPlaces=places;
   if(!places.length){console.error('ROVIQ has no approved place records to render');return}
   clearFallback();const bounds=new maplibregl.LngLatBounds();let count=0;
   for(const p of places){const lat=Number(p.lat),lng=Number(p.lng);if(!Number.isFinite(lat)||!Number.isFinite(lng))continue;const el=document.createElement('button');el.type='button';el.className='roviq-gl-marker roviq-runtime-marker'+(p.trust_level==='roviq'||Number(p.is_drivers_pick)===1?' roviq':'');el.setAttribute('aria-label',p.name||'ROVIQ place');el.addEventListener('click',e=>{e.stopPropagation();fallbackCard(p);map.easeTo({center:[lng,lat],zoom:Math.max(map.getZoom(),13.5),pitch:28,duration:600,essential:true})});fallbackMarkers.push(new maplibregl.Marker({element:el,anchor:'center'}).setLngLat([lng,lat]).addTo(map));bounds.extend([lng,lat]);count++}
   if(count>1)try{map.fitBounds(bounds,{padding:{top:150,bottom:175,left:30,right:30},maxZoom:12,duration:500})}catch{}
 }
-function boot(){pinUi();if(!window.__ROVIQ_PRIMARY_ACTIVE&&!window.__ROVIQ_PRIMARY_BOOT_REQUESTED){window.__ROVIQ_PRIMARY_BOOT_REQUESTED=true;const s=document.createElement('script');s.src='/js/maplibre-primary.js?v=20260819-2';s.async=false;s.dataset.roviqPrimary='1';s.onerror=()=>{window.__ROVIQ_PRIMARY_BOOT_REQUESTED=false;console.error('ROVIQ primary map controller failed to load')};document.head.appendChild(s)}setTimeout(()=>{pinUi();compat();restorePlaces()},500)}
+function boot(){pinUi();if(!window.__ROVIQ_PRIMARY_ACTIVE&&!window.__ROVIQ_PRIMARY_BOOT_REQUESTED){window.__ROVIQ_PRIMARY_BOOT_REQUESTED=true;const s=document.createElement('script');s.src='/js/maplibre-primary.js?v=20260819-3';s.async=false;s.dataset.roviqPrimary='1';s.onerror=()=>{window.__ROVIQ_PRIMARY_BOOT_REQUESTED=false;console.error('ROVIQ primary map controller failed to load')};document.head.appendChild(s)}setTimeout(()=>{pinUi();compat();restorePlaces()},500)}
 const observer=new MutationObserver(()=>pinUi());observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style']});
 window.addEventListener('roviq:map-ready',()=>{pinUi();compat();restorePlaces()});
 window.addEventListener('roviq:places-loaded',()=>setTimeout(restorePlaces,250));
