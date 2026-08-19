@@ -1,13 +1,17 @@
 (()=>{'use strict';
 const DARK='https://tiles.stadiamaps.com/styles/alidade_smooth_dark.json';
 const ICONS={food:'🍴',coffee:'☕',breweries:'◉',nature:'✦',scenic:'✦',culture:'◫',markets:'▣',recreation:'⌁',family:'◇',lodging:'⌂',automotive:'◈',charging:'ϟ',services:'•',other:'◆'};
-let stylingTimer=null;
+let stylingTimer=null,markerObserver=null;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 function buzz(ms=6){try{navigator.vibrate?.(ms)}catch{}}
+function ensureTidyCss(){if(document.querySelector('link[data-rq-tidy]'))return;const l=document.createElement('link');l.rel='stylesheet';l.href='/css/reference-ui-tidy.css?v=20260819-1';l.dataset.rqTidy='1';document.head.appendChild(l)}
+function syncMarkerPosition(el){if(!el?.matches?.('.roviq-gl-marker,.roviq-runtime-marker'))return;const inline=el.style.transform;if(!inline||inline==='none')return;if(el.style.getPropertyValue('--rq-map-position')!==inline)el.style.setProperty('--rq-map-position',inline)}
+function watchMarkerPositions(){const root=$('#map');if(!root||markerObserver)return;markerObserver=new MutationObserver(ms=>{for(const m of ms){if(m.type==='attributes')syncMarkerPosition(m.target);else m.addedNodes.forEach(n=>{if(n.nodeType!==1)return;if(n.matches?.('.roviq-gl-marker,.roviq-runtime-marker'))syncMarkerPosition(n);n.querySelectorAll?.('.roviq-gl-marker,.roviq-runtime-marker').forEach(syncMarkerPosition)})}});markerObserver.observe(root,{subtree:true,childList:true,attributes:true,attributeFilter:['style']});$$('.roviq-gl-marker,.roviq-runtime-marker').forEach(syncMarkerPosition)}
 function forceDark(){const map=window.__ROVIQ_MAPLIBRE;if(!map)return;try{const style=map.getStyle?.();const sprite=style?.sprite||'';if(!String(sprite).includes('alidade_smooth_dark')){map.setStyle(DARK);map.once('styledata',()=>setTimeout(decorateMarkers,80));}}catch{}}
 function placeByName(name){const items=Array.isArray(window.__roviqPlaces)?window.__roviqPlaces:[];return items.find(p=>String(p.name||'')===String(name||''))||null}
 function decorateMarkers(){clearTimeout(stylingTimer);stylingTimer=setTimeout(()=>{
   $$('.roviq-gl-marker,.roviq-runtime-marker').forEach(el=>{
+    syncMarkerPosition(el);
     const name=el.getAttribute('aria-label')||'';const p=placeByName(name);const cat=String(p?.category_key||p?.category||'other').toLowerCase();el.dataset.category=cat;
     if(!el.querySelector('.rq-marker-icon')){const i=document.createElement('span');i.className='rq-marker-icon';i.textContent=ICONS[cat]||'◆';el.appendChild(i)}
     if(p?.trust_level==='driver')el.classList.add('driver');if(p?.trust_level==='roviq'||Number(p?.is_drivers_pick)===1)el.classList.add('roviq');
@@ -19,9 +23,9 @@ function decorateCard(){const card=$('.place-preview');if(!card)return;const nam
 function ensureRestControls(){if(!$('.rq-rest-search')){const b=document.createElement('button');b.className='rq-rest-search';b.type='button';b.setAttribute('aria-label','Explore ROVIQ');b.textContent='⌕';b.onclick=()=>{buzz(7);document.body.classList.remove('roviq-rest');$('.mockup-discover')?.click()};($('#app')||document.body).appendChild(b)}
   if(!$('.rq-rest-new')){const b=document.createElement('button');b.className='rq-rest-new';b.type='button';b.innerHTML='<strong>2</strong><span>NEW</span>';b.onclick=()=>{buzz(7);document.body.classList.remove('roviq-rest');$('.mockup-wild')?.click()};($('#app')||document.body).appendChild(b)}}
 function wireCenter(){const b=$('.bottom-nav .mockup-center');if(!b||b.dataset.rqWired)return;b.dataset.rqWired='1';b.addEventListener('click',()=>{buzz(8);setTimeout(()=>{document.body.classList.add('roviq-rest');$('.place-preview')?.remove();const map=window.__ROVIQ_MAPLIBRE;if(map){try{map.easeTo({pitch:0,bearing:0,duration:500,essential:true})}catch{}}},0)})}
-function keepUiFixed(){const t=$('.mockup-tools');if(t){t.style.setProperty('position','fixed','important');t.style.setProperty('top','calc(96px + env(safe-area-inset-top))','important');t.style.setProperty('bottom','auto','important');t.style.setProperty('left','24px','important');t.style.setProperty('transform','none','important')}
+function keepUiFixed(){const t=$('.mockup-tools');if(t){t.style.setProperty('position','fixed','important');t.style.setProperty('top','calc(84px + env(safe-area-inset-top))','important');t.style.setProperty('bottom','auto','important');t.style.setProperty('left','20px','important');t.style.setProperty('transform','none','important')}
   const n=$('.bottom-nav');if(n){n.style.setProperty('position','fixed','important');n.style.setProperty('bottom','0','important');n.style.setProperty('top','auto','important');n.style.setProperty('transform','none','important')}}
-function hydrate(){ensureRestControls();wireCenter();keepUiFixed();decorateMarkers();decorateCard();forceDark()}
+function hydrate(){ensureTidyCss();watchMarkerPositions();ensureRestControls();wireCenter();keepUiFixed();decorateMarkers();decorateCard();forceDark()}
 const observer=new MutationObserver(()=>hydrate());observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
 window.addEventListener('roviq:map-ready',()=>setTimeout(()=>{forceDark();hydrate()},50));
 window.addEventListener('roviq:places-loaded',()=>setTimeout(()=>{decorateMarkers();hydrate()},80));
