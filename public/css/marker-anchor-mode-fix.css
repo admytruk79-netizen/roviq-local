@@ -1,0 +1,38 @@
+/* ROVIQ Local — regression guard: marker DOM must never override MapLibre positioning */
+.roviq-gl-marker,
+.roviq-runtime-marker{
+  /* MapLibre writes transform on the OUTER marker element. Never scale/translate it in CSS. */
+  transition:opacity .35s ease,filter .35s ease!important;
+}
+.roviq-gl-marker.rq-state-hidden,
+.roviq-runtime-marker.rq-state-hidden{
+  transform:none!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+.roviq-gl-marker.wild-candidate,
+.roviq-runtime-marker.wild-candidate{
+  transform:none!important;
+  opacity:1!important;
+  filter:drop-shadow(0 0 12px rgba(85,221,202,.95))!important;
+}
+.roviq-gl-marker.rq-state-hidden .rq-marker-icon,
+.roviq-runtime-marker.rq-state-hidden .rq-marker-icon{transform:scale(.7)!important;opacity:0!important}
+.roviq-gl-marker.wild-candidate .rq-marker-icon,
+.roviq-runtime-marker.wild-candidate .rq-marker-icon{transform:scale(1.22)!important}
+
+/* REST must still provide a clear way to wake into EXPLORE, matching the approved reference. */
+.rq-rest-search,.rq-rest-new{
+  position:fixed!important;
+  z-index:2360!important;
+  display:none!important;
+  border:1px solid rgba(216,168,92,.58)!important;
+  background:rgba(3,13,20,.88)!important;
+  color:#f0c777!important;
+  backdrop-filter:blur(16px)!important;
+  box-shadow:0 10px 30px rgba(0,0,0,.34)!important;
+}
+body.rq-rest .rq-rest-search,body.rq-rest .rq-rest-new{display:grid!important;place-items:center!important}
+.rq-rest-search{right:22px!important;top:calc(22px + env(safe-area-inset-top))!important;width:48px!important;height:48px!important;border-radius:50%!important;font-size:24px!important}
+.rq-rest-new{right:22px!important;bottom:calc(28px + env(safe-area-inset-bottom))!important;width:58px!important;height:58px!important;border-radius:50%!important;font:700 10px/1.05 Inter,sans-serif!important;letter-spacing:.08em!important;text-align:center!important}
+body.rq-explore .rq-rest-search,body.rq-explore .rq-rest-new,body.rq-wild .rq-rest-search,body.rq-wild .rq-rest-new{display:none!important}
