@@ -27,10 +27,18 @@ async function playClip(url,{title,copyTitle,copyText,holdMs=0}={}){
   }
   return !skipped;
 }
+function isDayTheme(){return document.documentElement.dataset.theme==='day'}
 async function playSequence(){
   if(running)return false;running=true;pauseMap();
-  let ok=await playClip(VIDEOS.departure,{title:'DEPARTING',copyTitle:'DAYLIGHT DEPARTURE'});
-  if(ok)ok=await playClip(VIDEOS.cruise,{title:'EN ROUTE',copyTitle:'CINEMATIC CRUISE',holdMs:400});
+  let ok;
+  if(isDayTheme()){
+    // Daytime sequence — only the matched daylight pair, never the night clip.
+    ok=await playClip(VIDEOS.departure,{title:'DEPARTING',copyTitle:'DAYLIGHT DEPARTURE'});
+    if(ok)ok=await playClip(VIDEOS.cruise,{title:'EN ROUTE',copyTitle:'CINEMATIC CRUISE',holdMs:400});
+  }else{
+    // Nighttime sequence — the night clip stands alone until a matching night cruise exists.
+    ok=await playClip(VIDEOS.night,{title:'DEPARTING',copyTitle:'NIGHT DRIVE',holdMs:400});
+  }
   document.body.classList.remove('rq-wild-cinematic');document.querySelector('#rq-wild-cinema').className='';resumeMap();running=false;return ok;
 }
 async function playArrival(photoUrl,name){
@@ -51,4 +59,5 @@ async function playArrival(photoUrl,name){
   document.body.classList.remove('rq-wild-cinematic');s.className='';resumeMap();
 }
 window.ROVIQ_CINEMATIC={playVirtual:playSequence,playArrival,warm};
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>warm(),{once:true});else warm();
+function warmForTheme(){warm(isDayTheme()?VIDEOS.departure:VIDEOS.night)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',warmForTheme,{once:true});else warmForTheme();
