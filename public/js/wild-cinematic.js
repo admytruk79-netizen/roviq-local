@@ -36,8 +36,8 @@ async function playSequence(){
     ok=await playClip(VIDEOS.departure,{title:'DEPARTING',copyTitle:'DAYLIGHT DEPARTURE'});
     if(ok)ok=await playClip(VIDEOS.cruise,{title:'EN ROUTE',copyTitle:'CINEMATIC CRUISE',holdMs:400});
   }else{
-    // Nighttime sequence — the night clip stands alone until a matching night cruise exists.
-    ok=await playClip(VIDEOS.night,{title:'DEPARTING',copyTitle:'NIGHT DRIVE',holdMs:400});
+    // Nighttime sequence — untouched: plays straight through to the destination reveal, same as before the day/night split.
+    ok=await playClip(VIDEOS.night,{holdMs:5000});
   }
   document.body.classList.remove('rq-wild-cinematic');document.querySelector('#rq-wild-cinema').className='';resumeMap();running=false;return ok;
 }
