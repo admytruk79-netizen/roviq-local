@@ -33,8 +33,10 @@ async function playSequence(){
   let ok;
   if(isDayTheme()){
     // Daytime sequence — only the matched daylight pair, never the night clip.
-    ok=await playClip(VIDEOS.departure,{title:'DEPARTING',copyTitle:'DAYLIGHT DEPARTURE'});
-    if(ok)ok=await playClip(VIDEOS.cruise,{title:'EN ROUTE',copyTitle:'CINEMATIC CRUISE',holdMs:400});
+    // No "DEPARTING"/destination-name overlay here: the car hasn't actually reached anywhere yet,
+    // and there's no footage backing that claim until arrival is handled separately.
+    ok=await playClip(VIDEOS.departure,{});
+    if(ok)ok=await playClip(VIDEOS.cruise,{holdMs:400});
   }else{
     // Nighttime sequence — untouched: plays straight through to the destination reveal, same as before the day/night split.
     ok=await playClip(VIDEOS.night,{holdMs:5000});
