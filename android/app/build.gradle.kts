@@ -13,7 +13,7 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
-        buildConfigField("String", "BASE_URL", "\"${project.findProperty("ROVIQ_BASE_URL") ?: "https://roviq-local.pages.dev/"}\"")
+        buildConfigField("String", "BASE_URL", "\"${project.findProperty("ROVIQ_BASE_URL") ?: "https://roviq-local2.admytruk79.workers.dev/"}\"")
     }
 
     compileOptions {
