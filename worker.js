@@ -40,12 +40,40 @@ async function assetResponse(request, env, path) {
   const response = await env.ASSETS.fetch(request);
   if (!response || response.status >= 400) return response;
   const isMutable = path === '/' || path.startsWith('/admin') || path.endsWith('.html') || path.endsWith('.js') || path.endsWith('.css');
-  if (!isMutable) return response;
+  if (isMutable) {
+    const headers = new Headers(response.headers);
+    headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    headers.set('Pragma', 'no-cache');
+    headers.set('Expires', '0');
+    return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+  }
+
+  const rangeHeader = request.headers.get('Range');
+  if (!rangeHeader || response.status !== 200 || response.headers.get('Content-Range')) {
+    if (response.headers.get('Accept-Ranges')) return response;
+    const headers = new Headers(response.headers);
+    headers.set('Accept-Ranges', 'bytes');
+    return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+  }
+
+  const buffer = await response.arrayBuffer();
+  const total = buffer.byteLength;
+  const match = /bytes=(\d*)-(\d*)/.exec(rangeHeader);
+  if (!match || (!match[1] && !match[2])) {
+    const headers = new Headers(response.headers);
+    headers.set('Accept-Ranges', 'bytes');
+    return new Response(buffer, { status: response.status, statusText: response.statusText, headers });
+  }
+  const start = match[1] ? parseInt(match[1], 10) : Math.max(0, total - parseInt(match[2], 10));
+  const end = match[1] && match[2] ? Math.min(total - 1, parseInt(match[2], 10)) : total - 1;
+  if (!(start <= end) || start >= total) {
+    return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${total}` } });
+  }
   const headers = new Headers(response.headers);
-  headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-  headers.set('Pragma', 'no-cache');
-  headers.set('Expires', '0');
-  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+  headers.set('Content-Range', `bytes ${start}-${end}/${total}`);
+  headers.set('Accept-Ranges', 'bytes');
+  headers.set('Content-Length', String(end - start + 1));
+  return new Response(buffer.slice(start, end + 1), { status: 206, statusText: 'Partial Content', headers });
 }
 
 export default {
