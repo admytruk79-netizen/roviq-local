@@ -8,58 +8,10 @@ function resumeMap(){document.body.classList.remove('rq-virtual-playing');const 
 function setSource(v,url){if(v.dataset.src===url)return;v.dataset.src=url;v.innerHTML='<source src="'+url+'" type="video/mp4">';v.load()}
 async function warm(url=VIDEOS.departure){const s=ensureStage(),v=s.querySelector('.rq-wc-video');try{setSource(v,url);if(v.readyState<3)await Promise.race([new Promise(r=>v.addEventListener('canplay',r,{once:true})),sleep(2500)])}catch{}}
 async function fallback(s){s.classList.add('fallback','scan');await sleep(450);s.className='fallback chase';await sleep(650);s.className='fallback locked';await sleep(500);s.className='fallback release';await sleep(300)}
-async function playClip(url,{title,copyTitle,copyText,holdMs=0}={}){
-  const s=ensureStage(),v=s.querySelector('.rq-wc-video'),copy=s.querySelector('.rq-wc-video-lock'),skip=s.querySelector('.rq-wc-skip');
-  setSource(v,url);
-  document.body.classList.add('rq-wild-cinematic');s.className='video';
-  s.querySelector('#rq-wc-title').textContent=title||'VIRTUAL DRIVE';
-  s.querySelector('#rq-wc-copy-title').textContent=copyTitle||'ROUTE READY';
-  copy.querySelector('span').textContent=copyText||document.querySelector('#rq-name')?.textContent?.trim()||'Simulating the journey';
-  let skipped=false;const skipNow=()=>{skipped=true;try{v.pause()}catch{}};skip.onclick=skipNow;
-  try{
-    v.currentTime=0;v.muted=false;const playPromise=v.play();if(playPromise)await Promise.race([playPromise,new Promise((_,rej)=>setTimeout(()=>rej(new Error('play stalled')),4000))]);
-    await new Promise(resolve=>{let settled=false;const done=()=>{if(settled)return;settled=true;resolve()};v.addEventListener('ended',done,{once:true});const tick=()=>{if(settled)return;if(skipped)return done();const d=Number.isFinite(v.duration)&&v.duration>0?v.duration:8;const left=d-v.currentTime;s.classList.toggle('video-lock',left<3.5);requestAnimationFrame(tick)};tick();setTimeout(done,12000)});
-    try{v.pause()}catch{}
-    navigator.vibrate?.([18,45,32]);
-    if(holdMs){s.classList.add('video-release');await sleep(holdMs)}
-  }catch(e){
-    try{v.muted=true;await Promise.race([v.play(),new Promise((_,rej)=>setTimeout(()=>rej(new Error('muted play stalled')),3000))]);const unlock=document.createElement('button');unlock.className='rq-wc-audio-unlock';unlock.textContent='SOUND ON';unlock.onclick=()=>{v.muted=false;unlock.remove()};s.appendChild(unlock);if(holdMs)await sleep(holdMs);unlock.remove()}catch{await fallback(s)}
-  }
-  return !skipped;
-}
+async function playClip(url,{title,copyTitle,copyText,holdMs=0}={}){const s=ensureStage(),v=s.querySelector('.rq-wc-video'),copy=s.querySelector('.rq-wc-video-lock'),skip=s.querySelector('.rq-wc-skip');setSource(v,url);document.body.classList.add('rq-wild-cinematic');s.className='video';s.querySelector('#rq-wc-title').textContent=title||'VIRTUAL DRIVE';s.querySelector('#rq-wc-copy-title').textContent=copyTitle||'ROUTE READY';copy.querySelector('span').textContent=copyText||document.querySelector('#rq-name')?.textContent?.trim()||'Simulating the journey';let skipped=false;const skipNow=()=>{skipped=true;try{v.pause()}catch{}};skip.onclick=skipNow;try{v.currentTime=0;v.muted=false;const playPromise=v.play();if(playPromise)await Promise.race([playPromise,new Promise((_,rej)=>setTimeout(()=>rej(new Error('play stalled')),4000))]);await new Promise(resolve=>{let settled=false;const done=()=>{if(settled)return;settled=true;resolve()};v.addEventListener('ended',done,{once:true});const tick=()=>{if(settled)return;if(skipped)return done();const d=Number.isFinite(v.duration)&&v.duration>0?v.duration:8;const left=d-v.currentTime;s.classList.toggle('video-lock',left<3.5);requestAnimationFrame(tick)};tick();setTimeout(done,15000)});try{v.pause()}catch{}navigator.vibrate?.([18,45,32]);if(holdMs){s.classList.add('video-release');await sleep(holdMs)}}catch(e){try{v.muted=true;await Promise.race([v.play(),new Promise((_,rej)=>setTimeout(()=>rej(new Error('muted play stalled')),3000))]);const unlock=document.createElement('button');unlock.className='rq-wc-audio-unlock';unlock.textContent='SOUND ON';unlock.onclick=()=>{v.muted=false;unlock.remove()};s.appendChild(unlock);if(holdMs)await sleep(holdMs);unlock.remove()}catch{await fallback(s)}}return !skipped}
 function isDayTheme(){return document.documentElement.dataset.theme==='day'}
-async function playSequence(){
-  if(running)return false;running=true;pauseMap();
-  let ok;
-  if(isDayTheme()){
-    // Daytime sequence — only the matched daylight pair, never the night clip.
-    // No "DEPARTING"/destination-name overlay here: the car hasn't actually reached anywhere yet,
-    // and there's no footage backing that claim until arrival is handled separately.
-    ok=await playClip(VIDEOS.departure,{});
-    if(ok)ok=await playClip(VIDEOS.cruise,{holdMs:400});
-  }else{
-    // Nighttime sequence — untouched: plays straight through to the destination reveal, same as before the day/night split.
-    ok=await playClip(VIDEOS.night,{holdMs:5000});
-  }
-  document.body.classList.remove('rq-wild-cinematic');document.querySelector('#rq-wild-cinema').className='';resumeMap();running=false;return ok;
-}
-async function playArrival(photoUrl,name){
-  const s=ensureStage(),photo=s.querySelector('.rq-wc-arrival-photo');
-  photo.style.backgroundImage=photoUrl?`url("${String(photoUrl).replace(/"/g,'')}")`:'linear-gradient(135deg,#10252b,#5a4326)';
-  document.body.classList.add('rq-wild-cinematic');
-  // Beat 1: destination recreation — the real place photo fades in.
-  s.className='photo-reveal';
-  s.querySelector('#rq-wc-copy-title').textContent='ARRIVED';
-  s.querySelector('.rq-wc-copy span').textContent=name||'';
-  navigator.vibrate?.([20,40,20,60]);
-  await sleep(1900);
-  // Beat 2: the ROVIQ car arrives and parks in front of the recreated destination.
-  s.className='photo-reveal parked';
-  s.querySelector('#rq-wc-copy-title').textContent='PARKED';
-  navigator.vibrate?.(35);
-  await sleep(2100);
-  document.body.classList.remove('rq-wild-cinematic');s.className='';resumeMap();
-}
-window.ROVIQ_CINEMATIC={playVirtual:playSequence,playArrival,warm};
-function warmForTheme(){warm(isDayTheme()?VIDEOS.departure:VIDEOS.night)}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',warmForTheme,{once:true});else warmForTheme();
+async function playSequence(){if(running)return false;running=true;pauseMap();let ok;if(isDayTheme()){ok=await playClip(VIDEOS.departure,{});if(ok)ok=await playClip(VIDEOS.cruise,{holdMs:400})}else ok=await playClip(VIDEOS.night,{holdMs:5000});document.body.classList.remove('rq-wild-cinematic');document.querySelector('#rq-wild-cinema').className='';resumeMap();running=false;return ok}
+function looksLikeVideo(value){return /\.(mp4|webm|mov)(?:[?#].*)?$/i.test(String(value||''))}
+async function playArrival(source,name){const s=ensureStage(),photo=s.querySelector('.rq-wc-arrival-photo'),v=s.querySelector('.rq-wc-video');pauseMap();document.body.classList.add('rq-wild-cinematic');if(looksLikeVideo(source)){s.querySelector('#rq-wc-title').textContent='ARRIVAL';s.querySelector('#rq-wc-copy-title').textContent='ARRIVING';s.querySelector('.rq-wc-video-lock span').textContent=name||'Destination';await playClip(source,{title:'ARRIVAL',copyTitle:'ARRIVED',copyText:name||'Destination',holdMs:2200});document.body.classList.remove('rq-wild-cinematic');s.className='';resumeMap();return}
+  photo.style.backgroundImage=source?`url("${String(source).replace(/"/g,'')}")`:'linear-gradient(135deg,#10252b,#5a4326)';s.className='photo-reveal';s.querySelector('#rq-wc-copy-title').textContent='ARRIVED';s.querySelector('.rq-wc-copy span').textContent=name||'';navigator.vibrate?.([20,40,20,60]);await sleep(2500);s.className='photo-reveal parked';s.querySelector('#rq-wc-copy-title').textContent='PARKED';navigator.vibrate?.(35);await sleep(3000);document.body.classList.remove('rq-wild-cinematic');s.className='';resumeMap()}
+window.ROVIQ_CINEMATIC={playVirtual:playSequence,playArrival,warm};function warmForTheme(){warm(isDayTheme()?VIDEOS.departure:VIDEOS.night)}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',warmForTheme,{once:true});else warmForTheme();
