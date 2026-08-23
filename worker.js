@@ -17,6 +17,7 @@ import * as adminAdvisories from './functions/api/admin/advisories/index.js';
 import * as adminAdvisory from './functions/api/admin/advisories/[id].js';
 import * as adminCurators from './functions/api/admin/curators.js';
 import * as adminAiMaintenance from './functions/api/admin/ai-maintenance.js';
+import * as adminMarkets from './functions/api/admin/markets.js';
 import * as staleSubmissions from './functions/api/cron/stale-submissions.js';
 import * as aiMaintenance from './functions/api/cron/ai-maintenance.js';
 
@@ -96,6 +97,7 @@ export default {
     if (path === '/api/admin/advisories') return run(adminAdvisories, request, env);
     if (path === '/api/admin/curators') return run(adminCurators, request, env);
     if (path === '/api/admin/ai-maintenance') return run(adminAiMaintenance, request, env);
+    if (path === '/api/admin/markets') return run(adminMarkets, request, env);
     if (path === '/api/cron/stale-submissions') return run(staleSubmissions, request, env);
     if (path === '/api/cron/ai-maintenance') return run(aiMaintenance, request, env);
 
