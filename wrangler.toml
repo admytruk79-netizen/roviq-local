@@ -1,4 +1,4 @@
-name = "roviq-local"
+name = "roviq-local2"
 main = "worker.js"
 compatibility_date = "2024-09-23"
 
@@ -12,8 +12,8 @@ crons = ["0 * * * *"]
 
 [[d1_databases]]
 binding = "DB"
-database_name = "roviq-local"
-database_id = "9a594b6c-0e35-4417-afbc-d072166b3e98"
+database_name = "roviq-local2"
+database_id = "02852e71-7a65-4fd1-b0ff-2dfc648bb071"
 
 [ai]
 binding = "AI"
