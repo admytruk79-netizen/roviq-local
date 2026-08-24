@@ -8,7 +8,6 @@ import * as version from './functions/api/version.js';
 import * as geocode from './functions/api/geocode.js';
 import * as route from './functions/api/route.js';
 import * as me from './functions/api/me.js';
-import * as core from './functions/api/core.js';
 import * as adminQueue from './functions/api/admin/queue.js';
 import * as adminModerate from './functions/api/admin/moderate.js';
 import * as adminActivity from './functions/api/admin/activity.js';
@@ -84,7 +83,6 @@ export default {
     if (path === '/api/config') return run(config, request, env);
     if (path === '/api/health') return run(health, request, env);
     if (path === '/api/version') return run(version, request, env);
-    if (path === '/api/core') return run(core, request, env);
     if (path === '/api/geocode') return run(geocode, request, env);
     if (path === '/api/route') return run(route, request, env);
     if (path === '/api/places') return run(places, request, env);
