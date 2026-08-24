@@ -1,4 +1,2 @@
 MAPBOX_TOKEN=pk.your_public_mapbox_token
 ADMIN_PASSCODE=choose_a_curator_passcode
-ROVIQ_CORE_URL=https://your-roviq-core.example.com
-ROVIQ_CORE_API_KEY=set_as_cloudflare_secret
