@@ -17,6 +17,7 @@ import * as adminAdvisories from './functions/api/admin/advisories/index.js';
 import * as adminAdvisory from './functions/api/admin/advisories/[id].js';
 import * as adminCurators from './functions/api/admin/curators.js';
 import * as adminAiMaintenance from './functions/api/admin/ai-maintenance.js';
+import * as adminMarkets from './functions/api/admin/markets.js';
 import * as staleSubmissions from './functions/api/cron/stale-submissions.js';
 import * as aiMaintenance from './functions/api/cron/ai-maintenance.js';
 
@@ -66,9 +67,7 @@ async function assetResponse(request, env, path) {
   }
   const start = match[1] ? parseInt(match[1], 10) : Math.max(0, total - parseInt(match[2], 10));
   const end = match[1] && match[2] ? Math.min(total - 1, parseInt(match[2], 10)) : total - 1;
-  if (!(start <= end) || start >= total) {
-    return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${total}` } });
-  }
+  if (!(start <= end) || start >= total) return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${total}` } });
   const headers = new Headers(response.headers);
   headers.set('Content-Range', `bytes ${start}-${end}/${total}`);
   headers.set('Accept-Ranges', 'bytes');
@@ -96,25 +95,19 @@ export default {
     if (path === '/api/admin/advisories') return run(adminAdvisories, request, env);
     if (path === '/api/admin/curators') return run(adminCurators, request, env);
     if (path === '/api/admin/ai-maintenance') return run(adminAiMaintenance, request, env);
+    if (path === '/api/admin/markets') return run(adminMarkets, request, env);
     if (path === '/api/cron/stale-submissions') return run(staleSubmissions, request, env);
     if (path === '/api/cron/ai-maintenance') return run(aiMaintenance, request, env);
 
     let match = path.match(/^\/api\/places\/(\d+)\/view$/);
     if (match) return run(placeView, request, env, { id: match[1] });
-
     match = path.match(/^\/api\/places\/(\d+)$/);
     if (match) return run(place, request, env, { id: match[1] });
-
     match = path.match(/^\/api\/admin\/places\/(\d+)$/);
     if (match) return run(adminPlace, request, env, { id: match[1] });
-
     match = path.match(/^\/api\/admin\/advisories\/(\d+)$/);
     if (match) return run(adminAdvisory, request, env, { id: match[1] });
-
-    if (path.startsWith('/api/')) {
-      return Response.json({ success: false, error: 'not found' }, { status: 404 });
-    }
-
+    if (path.startsWith('/api/')) return Response.json({ success: false, error: 'not found' }, { status: 404 });
     return assetResponse(request, env, path);
   },
 
@@ -123,7 +116,6 @@ export default {
     ctx.waitUntil(staleSubmissions.onRequestGet({ request: staleRequest, env }).then(async (response) => {
       if (!response.ok) console.error('ROVIQ Local stale-submission cron failed', response.status, await response.text());
     }).catch((error) => console.error('ROVIQ Local stale-submission cron error', error)));
-
     const hour = new Date(controller.scheduledTime || Date.now()).getUTCHours();
     if (hour % 6 === 0) {
       const headers = env.CRON_SECRET ? { Authorization: `Bearer ${env.CRON_SECRET}` } : {};

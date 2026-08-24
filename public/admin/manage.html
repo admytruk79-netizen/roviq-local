@@ -12,47 +12,21 @@ body{background:var(--paper);color:var(--ink)}.mgr{max-width:920px;margin:auto;p
 </head>
 <body>
 <div id="login" class="login-card">
-  <h1 class="mgr-title">ROVIQ curator</h1>
-  <p>Use your curator token or the legacy super-admin passcode.</p>
-  <input id="pass" type="password" autocomplete="current-password" placeholder="Curator token or admin passcode">
-  <button id="loginBtn" class="btn btn-fir">Open control center</button>
-  <div id="loginMsg" class="status"></div>
+  <h1 class="mgr-title">ROVIQ curator</h1><p>Use your curator token or the legacy super-admin passcode.</p><input id="pass" type="password" autocomplete="current-password" placeholder="Curator token or admin passcode"><button id="loginBtn" class="btn btn-fir">Open control center</button><div id="loginMsg" class="status"></div>
 </div>
 <main id="app" class="mgr" hidden>
   <div class="mgr-head"><div><div class="mgr-title">Local control center</div><div class="meta">Review · edit · verify · hide · publish</div></div><button id="newBtn" class="btn btn-fir">+ Add place</button></div>
   <div class="actor-strip"><span id="actorInfo">Signed in</span><button id="logoutBtn" type="button">Log out</button></div>
-  <div class="toolbar">
-    <input id="search" type="search" placeholder="Search name, address, city, market">
-    <select id="statusFilter"><option value="">All statuses</option><option>pending</option><option>approved</option><option>rejected</option></select>
-    <button id="refreshBtn" class="btn btn-outline">Refresh</button>
-    <a href="/admin/" class="btn btn-outline">Pending queue</a>
-    <a href="/admin/curators.html" class="btn btn-outline">Curators</a>
-  </div>
+  <div class="toolbar"><input id="search" type="search" placeholder="Search name, address, city, market"><select id="statusFilter"><option value="">All statuses</option><option>pending</option><option>approved</option><option>rejected</option></select><button id="refreshBtn" class="btn btn-outline">Refresh</button><a href="/admin/" class="btn btn-outline">Pending queue</a><a href="/admin/markets.html" class="btn btn-outline">Markets</a><a href="/admin/curators.html" class="btn btn-outline">Curators</a></div>
   <div id="list" class="grid"></div>
 </main>
 <div id="editorWrap" class="editor-wrap" role="dialog" aria-modal="true" aria-labelledby="editorTitle">
-  <form id="editor" class="editor">
-    <div class="mgr-head"><h2 id="editorTitle" class="mgr-title">Place</h2><button id="closeEditor" type="button" class="btn btn-outline">Close</button></div>
-    <input id="placeId" type="hidden">
-    <div class="editor-grid">
-      <label>Name<input id="name" required></label>
-      <label>Category<select id="category"><option value="food">Food</option><option value="coffee">Coffee</option><option value="breweries">Breweries</option><option value="markets">Markets & Shops</option><option value="nature">Nature</option><option value="scenic">Scenic Stops</option><option value="culture">Culture</option><option value="recreation">Recreation</option><option value="family">Family</option><option value="lodging">Lodging</option><option value="automotive">Automotive</option><option value="charging">Charging</option><option value="services">Services</option><option value="other">Other</option></select></label>
-      <label class="wide">Description<textarea id="description" rows="3"></textarea></label>
-      <label class="wide">Address<input id="address"></label>
-      <label>Latitude<input id="lat" type="number" step="any" required></label>
-      <label>Longitude<input id="lng" type="number" step="any" required></label>
-      <label class="wide">Photo URL<input id="photo_url" type="url"></label>
-      <label class="wide">Hours<input id="hours" placeholder="Mon-Fri 7am-5pm, Sat-Sun 8am-3pm"></label>
-      <label>Status<select id="status"><option value="approved">approved</option><option value="pending">pending</option><option value="rejected">rejected</option></select></label>
-      <label>Trust level<select id="trust_level"><option value="roviq">ROVIQ Pick</option><option value="driver">Driver recommended</option><option value="community">Community submitted</option></select></label>
-      <label>Submitted by<input id="submitted_by"></label>
-      <label class="wide">Moderator note<textarea id="moderation_note" rows="2"></textarea></label>
-      <div class="wide checks"><label><input id="is_drivers_pick" type="checkbox"> Driver's Pick</label><label><input id="is_hidden" type="checkbox"> Hidden from public map</label><label><input id="verify_now" type="checkbox"> Mark verified now</label></div>
-    </div>
-    <div class="editor-actions"><button class="btn btn-fir" type="submit">Save</button><button id="hideBtn" class="btn btn-outline" type="button">Hide</button></div>
-    <div id="editorMsg" class="status"></div>
-  </form>
+  <form id="editor" class="editor"><div class="mgr-head"><h2 id="editorTitle" class="mgr-title">Place</h2><button id="closeEditor" type="button" class="btn btn-outline">Close</button></div><input id="placeId" type="hidden"><div class="editor-grid">
+      <label>Name<input id="name" required></label><label>Category<select id="category"><option value="food">Food</option><option value="coffee">Coffee</option><option value="breweries">Breweries</option><option value="markets">Markets & Shops</option><option value="nature">Nature</option><option value="scenic">Scenic Stops</option><option value="culture">Culture</option><option value="recreation">Recreation</option><option value="family">Family</option><option value="lodging">Lodging</option><option value="automotive">Automotive</option><option value="charging">Charging</option><option value="services">Services</option><option value="other">Other</option></select></label>
+      <label class="wide">Description<textarea id="description" rows="3"></textarea></label><label class="wide">Address<input id="address"></label><label>Latitude<input id="lat" type="number" step="any" required></label><label>Longitude<input id="lng" type="number" step="any" required></label>
+      <label class="wide">Photo URL<input id="photo_url" type="url"></label><label class="wide">Virtual destination image URL<input id="virtual_image_url" placeholder="https://… or /assets/…"></label><label class="wide">Virtual arrival video URL<input id="arrival_video_url" placeholder="https://…mp4 or /assets/…mp4"></label>
+      <label class="wide">Hours<input id="hours" placeholder="Mon-Fri 7am-5pm, Sat-Sun 8am-3pm"></label><label>Status<select id="status"><option value="approved">approved</option><option value="pending">pending</option><option value="rejected">rejected</option></select></label><label>Trust level<select id="trust_level"><option value="roviq">ROVIQ Pick</option><option value="driver">Driver recommended</option><option value="community">Community submitted</option></select></label><label>Submitted by<input id="submitted_by"></label><label class="wide">Moderator note<textarea id="moderation_note" rows="2"></textarea></label><div class="wide checks"><label><input id="is_drivers_pick" type="checkbox"> Driver's Pick</label><label><input id="is_hidden" type="checkbox"> Hidden from public map</label><label><input id="verify_now" type="checkbox"> Mark verified now</label></div>
+    </div><div class="editor-actions"><button class="btn btn-fir" type="submit">Save</button><button id="hideBtn" class="btn btn-outline" type="button">Hide</button></div><div id="editorMsg" class="status"></div></form>
 </div>
-<script src="/admin/manage.js"></script>
-</body>
-</html>
+<script src="/admin/manage.js?v=20260823-1"></script>
+</body></html>

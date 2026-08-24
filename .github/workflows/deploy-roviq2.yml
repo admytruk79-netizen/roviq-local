@@ -4,11 +4,13 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
 permissions:
   contents: read
+
+concurrency:
+  group: roviq-local2-production
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -26,18 +28,24 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Verify app build
+        run: npm run build
+
+      - name: Validate Cloudflare deployment
+        run: npx wrangler deploy --dry-run
+
       - name: Verify Cloudflare credentials
         shell: bash
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || (echo "CLOUDFLARE_API_TOKEN is missing" && exit 1)
           test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "CLOUDFLARE_ACCOUNT_ID is missing" && exit 1)
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Deploy Worker and assets
+      - name: Deploy ROVIQ Local2 Worker and assets
         run: |
-          echo "Deploying ROVIQ Local production build"
+          echo "Deploying ROVIQ Local2 production build"
           npx wrangler deploy \
             --var GIT_COMMIT:"$GITHUB_SHA" \
             --var BUILD_TIME:"$(date -u +%Y-%m-%dT%H:%M:%SZ)"
