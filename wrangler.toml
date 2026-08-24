@@ -21,5 +21,3 @@ binding = "AI"
 # Runtime variables/secrets are configured in Cloudflare for this Worker:
 #   ADMIN_PASSCODE      shared curator passcode for the /admin tools
 #   CRON_SECRET         optional bearer secret for manual cron endpoint calls
-#   ROVIQ_CORE_URL      public HTTPS URL for ROVIQ Core
-#   ROVIQ_CORE_API_KEY  secret credential for authenticated Core integration
