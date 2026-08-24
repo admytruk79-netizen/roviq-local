@@ -1,3 +1,14 @@
-export async function loadApprovedPlaces(){const r=await fetch('/api/places?status=approved&scope=all',{cache:'no-store'});if(!r.ok)throw new Error(`places ${r.status}`);const d=await r.json();const places=Array.isArray(d?.places)?d.places:[];if(!places.some(p=>String(p.name||'').toLowerCase()==='jebale coffee'))places.push({id:'jebale-coffee-portland',name:'Jebale Coffee',category:'coffee',category_key:'coffee',description:'Jebale Coffee — single-origin Ugandan coffee in Portland.',why_stop:'A local Jebale Coffee destination in Portland’s Pearl District.',recommended_for:'Coffee and specialty coffee',local_tip:'1350 NW Lovejoy St, Portland, OR 97209',address:'1350 NW Lovejoy St, Portland, OR 97209',country_code:'US',country:'United States',region:'Oregon',city:'Portland',locality:'Pearl District',postal_code:'97209',market_slug:'us-or-portland',timezone:'America/Los_Angeles',lat:45.5298248,lng:-122.6848475,photo_url:'',status:'approved',is_drivers_pick:0,trust_level:'roviq'});return places}
+export async function loadApprovedPlaces(location=null){
+  const params=new URLSearchParams({status:'approved'});
+  if(location&&Number.isFinite(Number(location.lat))&&Number.isFinite(Number(location.lng))){
+    params.set('lat',String(location.lat));
+    params.set('lng',String(location.lng));
+    params.set('radius_km',String(location.radius_km||80));
+  }
+  const r=await fetch(`/api/places?${params.toString()}`,{cache:'no-store'});
+  if(!r.ok)throw new Error(`places ${r.status}`);
+  const d=await r.json();
+  return Array.isArray(d?.places)?d.places:[];
+}
 export function savedIds(){try{return new Set(JSON.parse(localStorage.getItem('roviq_saved')||'[]').map(String))}catch{return new Set()}}
 export function toggleSaved(id){const s=savedIds(),k=String(id);s.has(k)?s.delete(k):s.add(k);localStorage.setItem('roviq_saved',JSON.stringify([...s]));return s.has(k)}
