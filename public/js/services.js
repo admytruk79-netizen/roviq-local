@@ -1,3 +1,14 @@
+async function updateLocationLabel(scope){
+  try{
+    const r=await fetch(`/api/geocode?reverse=1&lat=${encodeURIComponent(scope.lat)}&lng=${encodeURIComponent(scope.lng)}`,{cache:'no-store'});
+    if(!r.ok)return;
+    const d=await r.json(),x=d?.result;
+    const label=[x?.city,x?.region].filter(Boolean).join(', ')||x?.country||'Current location';
+    const el=document.querySelector('.rq-brand span');
+    if(el)el.textContent=String(label).toUpperCase();
+  }catch{}
+}
+
 export async function loadApprovedPlaces(location=null){
   const params=new URLSearchParams({status:'approved'});
   let scope=location;
@@ -12,7 +23,10 @@ export async function loadApprovedPlaces(location=null){
     params.set('lat',String(scope.lat));
     params.set('lng',String(scope.lng));
     params.set('radius_km',String(scope.radius_km||80));
+    updateLocationLabel(scope);
   }else{
+    const el=typeof document!=='undefined'?document.querySelector('.rq-brand span'):null;
+    if(el)el.textContent='LOCATION UNAVAILABLE';
     return [];
   }
   const r=await fetch(`/api/places?${params.toString()}`,{cache:'no-store'});
