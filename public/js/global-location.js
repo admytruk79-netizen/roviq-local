@@ -8,7 +8,7 @@ function captureMap(){
   const Base=window.maplibregl.Map;
   class RoviqMap extends Base{
     constructor(options){
-      const safe={...options,center:options?.center||[0,20],zoom:Number.isFinite(options?.zoom)?options.zoom:2.4};
+      const safe={...options,center:[0,20],zoom:2.4};
       super(safe);
       state.map=this;
       window.__ROVIQ_MAP=this;
