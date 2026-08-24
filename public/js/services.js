@@ -1,9 +1,19 @@
 export async function loadApprovedPlaces(location=null){
   const params=new URLSearchParams({status:'approved'});
-  if(location&&Number.isFinite(Number(location.lat))&&Number.isFinite(Number(location.lng))){
-    params.set('lat',String(location.lat));
-    params.set('lng',String(location.lng));
-    params.set('radius_km',String(location.radius_km||80));
+  let scope=location;
+  if(!scope&&typeof navigator!=='undefined'&&navigator.geolocation){
+    scope=await new Promise(resolve=>navigator.geolocation.getCurrentPosition(
+      p=>resolve({lat:p.coords.latitude,lng:p.coords.longitude,radius_km:80}),
+      ()=>resolve(null),
+      {enableHighAccuracy:true,timeout:12000,maximumAge:30000}
+    ));
+  }
+  if(scope&&Number.isFinite(Number(scope.lat))&&Number.isFinite(Number(scope.lng))){
+    params.set('lat',String(scope.lat));
+    params.set('lng',String(scope.lng));
+    params.set('radius_km',String(scope.radius_km||80));
+  }else{
+    return [];
   }
   const r=await fetch(`/api/places?${params.toString()}`,{cache:'no-store'});
   if(!r.ok)throw new Error(`places ${r.status}`);
