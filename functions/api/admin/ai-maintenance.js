@@ -2,6 +2,32 @@ import { requireModerator } from '../../_lib/auth.js';
 import { ensureAiMaintenanceSchema } from '../../_lib/ai-schema.js';
 import { analyzeObservation, enqueueFinding, runMaintenanceBatch } from '../../_lib/ai-maintenance.js';
 
+const SAFE_FIELDS = new Set(['address','hours','category','website_url']);
+
+function parseChanges(value){
+  try{
+    const parsed=typeof value==='string'?JSON.parse(value):value;
+    return parsed&&typeof parsed==='object'?parsed:{};
+  }catch{return {};}
+}
+
+async function applyApprovedChanges(env,row,actor){
+  const proposed=parseChanges(row.proposed_changes);
+  const entries=Object.entries(proposed).filter(([key,value])=>SAFE_FIELDS.has(key)&&value!==null&&value!==undefined&&String(value).trim()!=='');
+  const now=new Date().toISOString();
+  if(!entries.length){
+    await env.DB.prepare("UPDATE places SET ai_review_status='reviewed', suspected_change=NULL, last_ai_review_at=?, confidence_score=? WHERE id=?")
+      .bind(now,Number(row.confidence||0),row.place_id).run();
+    return {applied_fields:[]};
+  }
+  const assignments=entries.map(([key])=>`${key}=?`).join(', ');
+  const values=entries.map(([,value])=>String(value).trim());
+  const source=row.source_url||row.source_type||'human_reviewed_ai_maintenance';
+  await env.DB.prepare(`UPDATE places SET ${assignments}, verification_source=?, verified_at=?, ai_review_status='reviewed', suspected_change=NULL, last_ai_review_at=?, confidence_score=? WHERE id=?`)
+    .bind(...values,source,now,now,Number(row.confidence||0),row.place_id).run();
+  return {applied_fields:entries.map(([key])=>key)};
+}
+
 export async function onRequestGet({request,env}){
   const {response,actor}=await requireModerator(request,env);if(response)return response;
   await ensureAiMaintenanceSchema(env);
@@ -34,9 +60,15 @@ export async function onRequestPost({request,env}){
     if(!id||!['approved','rejected','resolved'].includes(decision))return Response.json({success:false,error:'invalid resolution'},{status:400});
     const row=await env.DB.prepare('SELECT * FROM ai_maintenance_queue WHERE id=?').bind(id).first();
     if(!row)return Response.json({success:false,error:'finding not found'},{status:404});
-    await env.DB.prepare('UPDATE ai_maintenance_queue SET status=?,reviewed_at=CURRENT_TIMESTAMP,reviewed_by=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(decision,actor.handle||actor.role,id).run();
-    await env.DB.prepare("UPDATE places SET ai_review_status=?, suspected_change=CASE WHEN ?='approved' THEN suspected_change ELSE NULL END WHERE id=?").bind(decision==='approved'?'approved_change':'reviewed',decision,row.place_id).run();
-    return Response.json({success:true,id,status:decision});
+    if(row.status!=='pending')return Response.json({success:false,error:'finding has already been reviewed'},{status:409});
+
+    let applied={applied_fields:[]};
+    if(decision==='approved')applied=await applyApprovedChanges(env,row,actor);
+    else await env.DB.prepare("UPDATE places SET ai_review_status='reviewed', suspected_change=NULL, last_ai_review_at=CURRENT_TIMESTAMP WHERE id=?").bind(row.place_id).run();
+
+    await env.DB.prepare('UPDATE ai_maintenance_queue SET status=?,reviewed_at=CURRENT_TIMESTAMP,reviewed_by=?,updated_at=CURRENT_TIMESTAMP WHERE id=?')
+      .bind(decision,actor.handle||actor.role,id).run();
+    return Response.json({success:true,id,status:decision,...applied});
   }
   return Response.json({success:false,error:'unknown action'},{status:400});
 }
