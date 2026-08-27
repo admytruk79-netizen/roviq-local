@@ -175,13 +175,16 @@ class RoviqNavigationScreen(
             return
         }
         val steps = r.steps
-        if (stepIndex < steps.size) {
-            val current = steps[stepIndex]
-            val stepLat = current.lat
-            val stepLng = current.lng
-            if (stepLat != null && stepLng != null) {
-                val toStep = haversineMeters(location.latitude, location.longitude, stepLat, stepLng)
-                if (toStep <= STEP_ADVANCE_METERS && stepIndex < steps.size - 1) stepIndex++
+        if (stepIndex < steps.size - 1) {
+            // Advance once we're near the NEXT maneuver point, not the current step's own
+            // location (which is roughly where we already are right after advancing to it —
+            // checking that would skip through steps almost instantly).
+            val next = steps[stepIndex + 1]
+            val nextLat = next.lat
+            val nextLng = next.lng
+            if (nextLat != null && nextLng != null) {
+                val toNext = haversineMeters(location.latitude, location.longitude, nextLat, nextLng)
+                if (toNext <= STEP_ADVANCE_METERS) stepIndex++
             }
         }
         invalidate()
