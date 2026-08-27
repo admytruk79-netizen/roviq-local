@@ -14,3 +14,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "RoviqLocal"
 include(":app")
+include(":virtual")
