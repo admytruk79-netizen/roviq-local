@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="day">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>ROVIQ Virtual</title>
+  <meta name="theme-color" content="#030a10">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.23.0/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="/css/philosophy-first.css?v=20260827-bridge1">
+  <link rel="stylesheet" href="/css/cinematic-drive.css?v=20260819-5">
+  <link rel="stylesheet" href="/css/wild-cinematic.css?v=20260820-2">
+  <style>
+    html,body,#virtual-map{margin:0;width:100%;height:100%;overflow:hidden;background:#030a10}
+    #virtual-map{position:fixed;inset:0}
+    .rv-shell{position:fixed;inset:0;z-index:20;pointer-events:none;color:#f6efe6;font-family:Inter,system-ui,sans-serif}
+    .rv-brand{position:absolute;top:calc(22px + env(safe-area-inset-top));left:20px;padding:10px 13px;border:1px solid rgba(225,180,107,.25);border-radius:14px;background:rgba(3,13,20,.76);backdrop-filter:blur(18px);box-shadow:0 14px 38px rgba(0,0,0,.3)}
+    .rv-brand strong{display:block;font-family:Georgia,serif;letter-spacing:.12em;color:#e1b46b;font-size:20px}.rv-brand span{display:block;margin-top:4px;font-size:9px;letter-spacing:.15em;color:#6de7d8}
+    .rv-hud{position:absolute;left:14px;right:14px;bottom:calc(22px + env(safe-area-inset-bottom));padding:15px 16px 14px;border:1px solid rgba(109,231,216,.3);border-radius:18px;background:linear-gradient(145deg,rgba(2,9,15,.94),rgba(7,24,31,.91));backdrop-filter:blur(22px);box-shadow:0 24px 70px rgba(0,0,0,.46);pointer-events:auto}
+    .rv-hud small{display:block;font-size:9px;font-weight:800;letter-spacing:.14em;color:#6de7d8}.rv-hud h1{margin:5px 0 4px;font-size:18px;font-weight:650}.rv-hud p{margin:0;color:#d8d0c7;font-size:12px}.rv-actions{display:flex;gap:8px;margin-top:12px}.rv-actions button{flex:1;height:38px;border-radius:11px;border:1px solid rgba(225,180,107,.36);background:rgba(0,0,0,.12);color:#e1b46b}.rv-actions button.primary{border-color:rgba(109,231,216,.58);color:#6de7d8}
+  </style>
+</head>
+<body>
+  <div id="virtual-map"></div>
+  <div class="rv-shell">
+    <div class="rv-brand"><strong>ROVIQ</strong><span>VIRTUAL</span></div>
+    <section class="rv-hud">
+      <small id="rv-state">ROVIQ VIRTUAL</small>
+      <h1 id="rv-name">Destination</h1>
+      <p id="rv-meta">Preparing the journey…</p>
+      <div class="rv-actions"><button id="rv-close">Close</button><button class="primary" id="rv-replay">Replay</button></div>
+    </section>
+  </div>
+  <script src="https://unpkg.com/maplibre-gl@5.23.0/dist/maplibre-gl.js"></script>
+  <script src="/js/wild-cinematic.js?v=20260820-2"></script>
+  <script type="module" src="/js/virtual-bridge-app.js?v=20260827-1"></script>
+</body>
+</html>
