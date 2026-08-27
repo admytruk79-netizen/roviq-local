@@ -49,7 +49,7 @@ private fun maneuverTypeFor(step: RoviqRouteStep): Int {
     return when (step.maneuverType.lowercase()) {
         "depart" -> Maneuver.TYPE_STRAIGHT
         "arrive" -> Maneuver.TYPE_DESTINATION_STRAIGHT
-        "roundabout", "rotary" -> Maneuver.TYPE_ROUNDABOUT_ENTER
+        "roundabout", "rotary" -> Maneuver.TYPE_STRAIGHT
         "turn" -> when {
             modifier.contains("sharp left") -> Maneuver.TYPE_TURN_NORMAL_LEFT
             modifier.contains("sharp right") -> Maneuver.TYPE_TURN_NORMAL_RIGHT
