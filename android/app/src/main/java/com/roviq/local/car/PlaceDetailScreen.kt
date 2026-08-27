@@ -6,6 +6,7 @@ import androidx.car.app.CarContext
 import androidx.car.app.Screen
 import androidx.car.app.model.Action
 import androidx.car.app.model.MessageTemplate
+import androidx.car.app.model.ParkedOnlyOnClickListener
 import androidx.car.app.model.Template
 import com.roviq.local.data.RoviqPlace
 
@@ -31,17 +32,41 @@ class PlaceDetailScreen(
                 try {
                     screenManager.push(RoviqNavigationScreen(carContext, place))
                 } catch (t: Throwable) {
-                    // Navigation category isn't authorized on this host yet; hand off instead.
                     val uri = Uri.parse("geo:${place.lat},${place.lng}?q=${place.lat},${place.lng}(${Uri.encode(place.name)})")
                     carContext.startCarApp(Intent(CarContext.ACTION_NAVIGATE, uri))
                 }
             }
             .build()
 
+        val virtual = Action.Builder()
+            .setTitle("Virtual")
+            .setOnClickListener(
+                ParkedOnlyOnClickListener.create {
+                    val uri = Uri.Builder()
+                        .scheme("roviqvirtual")
+                        .authority("drive")
+                        .appendQueryParameter("placeId", place.id.toString())
+                        .appendQueryParameter("name", place.name)
+                        .appendQueryParameter("lat", place.lat.toString())
+                        .appendQueryParameter("lng", place.lng.toString())
+                        .build()
+                    val intent = Intent(Intent.ACTION_VIEW, uri)
+                        .setPackage("com.roviq.local.virtual")
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    try {
+                        carContext.startActivity(intent)
+                    } catch (_: Throwable) {
+                        // Companion is optional. Navigation remains fully available.
+                    }
+                }
+            )
+            .build()
+
         return MessageTemplate.Builder(message)
             .setTitle(place.name)
             .setHeaderAction(Action.BACK)
             .addAction(navigate)
+            .addAction(virtual)
             .build()
     }
 }
