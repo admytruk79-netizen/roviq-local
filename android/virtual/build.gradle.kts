@@ -22,6 +22,25 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { buildConfig = true }
+
+    signingConfigs {
+        create("release") {
+            val storePath = System.getenv("ROVIQ_KEYSTORE_PATH")
+            if (!storePath.isNullOrBlank()) {
+                storeFile = file(storePath)
+                storePassword = System.getenv("ROVIQ_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("ROVIQ_KEY_ALIAS")
+                keyPassword = System.getenv("ROVIQ_KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
 }
 
 kotlin { jvmToolchain(17) }
