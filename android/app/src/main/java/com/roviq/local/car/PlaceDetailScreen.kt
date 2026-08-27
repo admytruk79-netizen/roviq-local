@@ -1,5 +1,6 @@
 package com.roviq.local.car
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import androidx.car.app.CarContext
@@ -54,9 +55,13 @@ class PlaceDetailScreen(
                         .setPackage("com.roviq.local.virtual")
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     try {
+                        // This opens the companion on the connected phone, not on the car screen.
+                        // The ParkedOnlyOnClickListener ensures the host only allows the handoff when safe.
                         carContext.startActivity(intent)
-                    } catch (_: Throwable) {
-                        // Companion is optional. Navigation remains fully available.
+                    } catch (_: ActivityNotFoundException) {
+                        // Companion is optional. Keep the supported Navigation/POI experience intact.
+                    } catch (_: SecurityException) {
+                        // Host/platform policy may reject phone activity launch; navigation remains available.
                     }
                 }
             )
