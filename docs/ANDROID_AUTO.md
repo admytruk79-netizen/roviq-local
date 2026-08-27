@@ -27,7 +27,13 @@ Use `PlaceListMapTemplate` (or `MapWithContentTemplate` where appropriate) to ex
 Each result should show only essential information: name, distance/open state where available, trust marker, and a navigation action. Do not expose contribution forms, admin, long descriptions, account settings or sponsor management on the car display.
 
 ## Navigation handoff
-ROVIQ Local is a POI discovery product, not a navigation engine. Selecting Navigate should hand the destination to a navigation-capable app/system. Do not declare the navigation category or navigation-template permission unless ROVIQ later becomes a genuine turn-by-turn navigation app.
+The `CarAppService` now declares both `androidx.car.app.category.POI` and `androidx.car.app.category.NAVIGATION` (plus the `NAVIGATION_TEMPLATES` permission), so a single app package serves both roles at once:
+- **POI mode** (nearby/picks/category browsing) needs no special approval and works today.
+- **Navigation mode** (`RoviqNavigationScreen`, using `NavigationManager`/`NavigationTemplate`) requires Google to grant the restricted Navigation category in Play Console before a real host will actually let it run — this is a Play Console request, not a code change.
+
+`PlaceDetailScreen`'s Navigate action tries to push `RoviqNavigationScreen` first and falls back to the old hand-off (`ACTION_NAVIGATE` to another nav app) if that throws — so the same build works correctly whether or not the Navigation grant has landed yet, with no separate release needed once it does.
+
+Real turn-by-turn reuses the same `/api/route` endpoint the phone app already uses; live position comes from the standard Android `LocationManager` (not `CarHardwareManager`, to avoid a second permission surface), and maneuver-by-maneuver progression is tracked client-side the same way the phone's `checkArrival`/route-progress logic works, not via server-side rerouting.
 
 ## Voice
 After the POI car experience is stable, add App Actions for Cars so users can invoke nearby ROVIQ places by voice. This is a later enhancement, not a launch blocker.

@@ -28,8 +28,13 @@ class PlaceDetailScreen(
         val navigate = Action.Builder()
             .setTitle("Navigate")
             .setOnClickListener {
-                val uri = Uri.parse("geo:${place.lat},${place.lng}?q=${place.lat},${place.lng}(${Uri.encode(place.name)})")
-                carContext.startCarApp(Intent(CarContext.ACTION_NAVIGATE, uri))
+                try {
+                    screenManager.push(RoviqNavigationScreen(carContext, place))
+                } catch (t: Throwable) {
+                    // Navigation category isn't authorized on this host yet; hand off instead.
+                    val uri = Uri.parse("geo:${place.lat},${place.lng}?q=${place.lat},${place.lng}(${Uri.encode(place.name)})")
+                    carContext.startCarApp(Intent(CarContext.ACTION_NAVIGATE, uri))
+                }
             }
             .build()
 
