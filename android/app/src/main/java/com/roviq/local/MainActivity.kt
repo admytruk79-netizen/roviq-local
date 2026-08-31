@@ -70,6 +70,41 @@ class MainActivity : AppCompatActivity() {
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        if (webView.canGoBack()) webView.goBack() else super.onBackPressed()
+        val interceptBack = """
+            (() => {
+              const navHud = document.querySelector('#rq-nav-hud:not([hidden])');
+              const navClose = navHud?.querySelector('.rq-nav-close');
+              if (navHud && navClose) {
+                navClose.click();
+                return 'handled';
+              }
+
+              const card = document.querySelector('#rq-card:not([hidden])');
+              const cardClose = document.querySelector('#rq-card-close');
+              if (card && cardClose) {
+                cardClose.click();
+                return 'handled';
+              }
+
+              const menu = document.querySelector('#rq-discover-menu:not([hidden])');
+              const discover = document.querySelector('#rq-discover');
+              if (menu && discover) {
+                discover.click();
+                return 'handled';
+              }
+
+              if (document.body?.dataset?.state === 'wild') {
+                document.querySelector('#rq-home')?.click();
+                return 'handled';
+              }
+
+              return 'unhandled';
+            })();
+        """.trimIndent()
+
+        webView.evaluateJavascript(interceptBack) { result ->
+            if (result == "\"handled\"") return@evaluateJavascript
+            if (webView.canGoBack()) webView.goBack() else super.onBackPressed()
+        }
     }
 }
