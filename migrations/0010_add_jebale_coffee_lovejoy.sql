@@ -1,5 +1,5 @@
 -- Add Jebale Coffee's Portland Lovejoy location to the approved ROVIQ Local catalog.
--- Sources: Jebale Coffee; business listing for 1350 NW Lovejoy St, Portland, OR 97209.
+-- Sources: Jebale Coffee official site; current business listing for 1350 NW Lovejoy St, Portland, OR 97209.
 INSERT INTO places (
   name,
   category,
@@ -47,7 +47,7 @@ SELECT
   '97209',
   'us-or-portland',
   'America/Los_Angeles',
-  'Mon-Wed 7 AM-4 PM; Thu 7 AM-4 PM; Fri 7 AM-3 PM; Sat-Sun 9 AM-1 PM',
+  'Mon-Thu 7 AM-4 PM; Fri 7 AM-3 PM; Sat-Sun 9 AM-1 PM',
   'approved',
   'Oleksandr Dmytruk',
   CURRENT_TIMESTAMP,
