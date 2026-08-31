@@ -25,6 +25,7 @@ INSERT INTO places (
   updated_at,
   verified_at,
   is_hidden,
+  is_drivers_pick,
   trust_level,
   verification_status
 )
@@ -53,6 +54,7 @@ SELECT
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP,
   0,
+  1,
   'roviq',
   'trusted'
 WHERE NOT EXISTS (
@@ -62,3 +64,16 @@ WHERE NOT EXISTS (
     AND ABS(lat - 45.5298248) < 0.0002
     AND ABS(lng - -122.6848475) < 0.0002
 );
+
+-- Keep an existing row visible and prioritized if the migration has already inserted it.
+UPDATE places
+SET status = 'approved',
+    is_hidden = 0,
+    is_drivers_pick = 1,
+    trust_level = 'roviq',
+    verification_status = 'trusted',
+    updated_at = CURRENT_TIMESTAMP,
+    verified_at = CURRENT_TIMESTAMP
+WHERE lower(name) = 'jebale coffee'
+  AND ABS(lat - 45.5298248) < 0.0002
+  AND ABS(lng - -122.6848475) < 0.0002;
