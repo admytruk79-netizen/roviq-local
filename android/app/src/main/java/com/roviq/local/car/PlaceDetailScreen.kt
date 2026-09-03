@@ -38,10 +38,18 @@ class PlaceDetailScreen(
             }
             .build()
 
+        val virtualDrive = Action.Builder()
+            .setTitle("Virtual Drive")
+            .setOnClickListener {
+                screenManager.push(RoviqVirtualDriveScreen(carContext, place))
+            }
+            .build()
+
         return MessageTemplate.Builder(message)
             .setTitle(place.name)
             .setHeaderAction(Action.BACK)
             .addAction(navigate)
+            .addAction(virtualDrive)
             .build()
     }
 }
