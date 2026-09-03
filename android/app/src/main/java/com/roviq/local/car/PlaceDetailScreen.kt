@@ -39,6 +39,9 @@ class PlaceDetailScreen(
             }
             .build()
 
+        // Hands off to the :virtual companion (phone-side, reuses the real cinematic
+        // wild-cinematic.js engine) rather than a car-native step-through screen, since
+        // video isn't available in any Car App Library template.
         val virtual = Action.Builder()
             .setTitle("Virtual")
             .setOnClickListener(
