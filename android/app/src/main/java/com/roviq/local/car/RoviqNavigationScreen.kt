@@ -69,7 +69,7 @@ private fun maneuverTypeFor(step: RoviqRouteStep): Int {
     }
 }
 
-internal fun cueFor(step: RoviqRouteStep): String {
+private fun cueFor(step: RoviqRouteStep): String {
     val road = step.name.takeIf { it.isNotBlank() }?.let { " on $it" } ?: ""
     return when (step.maneuverType.lowercase()) {
         "depart" -> "Head out${road}"

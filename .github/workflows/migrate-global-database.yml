@@ -10,8 +10,8 @@ permissions:
 
 jobs:
   migrate:
-    if: github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Bootstrap ROVIQ2 D1 database'
-    name: Bootstrap ROVIQ Local2 D1
+    if: github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Bootstrap ROVIQ2 D1 database' || github.event.head_commit.message == 'Apply ROVIQ Local catalog migrations'
+    name: Migrate ROVIQ Local2 D1
     runs-on: ubuntu-latest
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -36,4 +36,11 @@ jobs:
         run: npm install
 
       - name: Bootstrap schema, platform migrations and seed data
+        if: github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Bootstrap ROVIQ2 D1 database'
         run: npm run db:bootstrap:remote
+
+      - name: Apply approved catalog migrations
+        if: github.event.head_commit.message == 'Apply ROVIQ Local catalog migrations'
+        run: |
+          npx wrangler d1 execute roviq-local2 --remote --file=./migrations/0009_add_prince_coffee_northwest.sql
+          npx wrangler d1 execute roviq-local2 --remote --file=./migrations/0010_add_jebale_coffee_lovejoy.sql

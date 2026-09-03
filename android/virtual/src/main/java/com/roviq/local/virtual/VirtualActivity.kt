@@ -1,8 +1,10 @@
-package com.roviq.local
+package com.roviq.local.virtual
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.webkit.GeolocationPermissions
 import android.webkit.WebChromeClient
@@ -12,7 +14,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 
-class MainActivity : AppCompatActivity() {
+class VirtualActivity : AppCompatActivity() {
     private lateinit var webView: WebView
     private var pendingGeoOrigin: String? = null
     private var pendingGeoCallback: GeolocationPermissions.Callback? = null
@@ -32,10 +34,22 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         webView = WebView(this)
         setContentView(webView)
+        configureWebView()
+        loadBridge(intent)
+    }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        loadBridge(intent)
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun configureWebView() {
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
         webView.settings.databaseEnabled = true
+        webView.settings.mediaPlaybackRequiresUserGesture = false
         webView.settings.setGeolocationEnabled(true)
         webView.webViewClient = WebViewClient()
         webView.webChromeClient = object : WebChromeClient() {
@@ -44,8 +58,8 @@ class MainActivity : AppCompatActivity() {
                 callback: GeolocationPermissions.Callback?
             ) {
                 if (origin == null || callback == null) return
-                val fine = ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.ACCESS_FINE_LOCATION)
-                val coarse = ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.ACCESS_COARSE_LOCATION)
+                val fine = ContextCompat.checkSelfPermission(this@VirtualActivity, Manifest.permission.ACCESS_FINE_LOCATION)
+                val coarse = ContextCompat.checkSelfPermission(this@VirtualActivity, Manifest.permission.ACCESS_COARSE_LOCATION)
                 if (fine == PackageManager.PERMISSION_GRANTED || coarse == PackageManager.PERMISSION_GRANTED) {
                     callback.invoke(origin, true, false)
                 } else {
@@ -58,9 +72,23 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
 
-        if (savedInstanceState == null) webView.loadUrl(BuildConfig.BASE_URL)
-        else webView.restoreState(savedInstanceState)
+    private fun loadBridge(intent: Intent?) {
+        val incoming = intent?.data
+        val placeId = incoming?.getQueryParameter("placeId").orEmpty()
+        val name = incoming?.getQueryParameter("name").orEmpty()
+        val lat = incoming?.getQueryParameter("lat").orEmpty()
+        val lng = incoming?.getQueryParameter("lng").orEmpty()
+        val base = BuildConfig.BASE_URL.trimEnd('/')
+        val url = Uri.parse("$base/virtual-bridge.html").buildUpon()
+            .appendQueryParameter("placeId", placeId)
+            .appendQueryParameter("name", name)
+            .appendQueryParameter("lat", lat)
+            .appendQueryParameter("lng", lng)
+            .build()
+            .toString()
+        webView.loadUrl(url)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -70,41 +98,6 @@ class MainActivity : AppCompatActivity() {
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        val interceptBack = """
-            (() => {
-              const navHud = document.querySelector('#rq-nav-hud:not([hidden])');
-              const navClose = navHud?.querySelector('.rq-nav-close');
-              if (navHud && navClose) {
-                navClose.click();
-                return 'handled';
-              }
-
-              const card = document.querySelector('#rq-card:not([hidden])');
-              const cardClose = document.querySelector('#rq-card-close');
-              if (card && cardClose) {
-                cardClose.click();
-                return 'handled';
-              }
-
-              const menu = document.querySelector('#rq-discover-menu:not([hidden])');
-              const discover = document.querySelector('#rq-discover');
-              if (menu && discover) {
-                discover.click();
-                return 'handled';
-              }
-
-              if (document.body?.dataset?.state === 'wild') {
-                document.querySelector('#rq-home')?.click();
-                return 'handled';
-              }
-
-              return 'unhandled';
-            })();
-        """.trimIndent()
-
-        webView.evaluateJavascript(interceptBack) { result ->
-            if (result == "\"handled\"") return@evaluateJavascript
-            if (webView.canGoBack()) webView.goBack() else super.onBackPressed()
-        }
+        if (webView.canGoBack()) webView.goBack() else super.onBackPressed()
     }
 }

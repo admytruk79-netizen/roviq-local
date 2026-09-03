@@ -1,5 +1,6 @@
 (()=>{
 'use strict';
+if(new URLSearchParams(location.search).get('mode')==='tow')return;
 const TOKEN_KEY='roviq_contributor_token';
 const categories=[['coffee','Coffee'],['food','Food'],['nature','Nature'],['scenic','Scenic'],['culture','Culture'],['markets','Market'],['recreation','Recreation'],['family','Family'],['lodging','Lodging'],['automotive','Automotive'],['charging','Charging'],['services','Services'],['other','Other']];
 const $=s=>document.querySelector(s);

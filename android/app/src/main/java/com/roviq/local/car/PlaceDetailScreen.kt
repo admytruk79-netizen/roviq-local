@@ -1,11 +1,13 @@
 package com.roviq.local.car
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import androidx.car.app.CarContext
 import androidx.car.app.Screen
 import androidx.car.app.model.Action
 import androidx.car.app.model.MessageTemplate
+import androidx.car.app.model.ParkedOnlyOnClickListener
 import androidx.car.app.model.Template
 import com.roviq.local.data.RoviqPlace
 
@@ -31,25 +33,45 @@ class PlaceDetailScreen(
                 try {
                     screenManager.push(RoviqNavigationScreen(carContext, place))
                 } catch (t: Throwable) {
-                    // Navigation category isn't authorized on this host yet; hand off instead.
                     val uri = Uri.parse("geo:${place.lat},${place.lng}?q=${place.lat},${place.lng}(${Uri.encode(place.name)})")
                     carContext.startCarApp(Intent(CarContext.ACTION_NAVIGATE, uri))
                 }
             }
             .build()
 
-        val virtualDrive = Action.Builder()
-            .setTitle("Virtual Drive")
-            .setOnClickListener {
-                screenManager.push(RoviqVirtualDriveScreen(carContext, place))
-            }
+        val virtual = Action.Builder()
+            .setTitle("Virtual")
+            .setOnClickListener(
+                ParkedOnlyOnClickListener.create {
+                    val uri = Uri.Builder()
+                        .scheme("roviqvirtual")
+                        .authority("drive")
+                        .appendQueryParameter("placeId", place.id.toString())
+                        .appendQueryParameter("name", place.name)
+                        .appendQueryParameter("lat", place.lat.toString())
+                        .appendQueryParameter("lng", place.lng.toString())
+                        .build()
+                    val intent = Intent(Intent.ACTION_VIEW, uri)
+                        .setPackage("com.roviq.local.virtual")
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    try {
+                        // This opens the companion on the connected phone, not on the car screen.
+                        // The ParkedOnlyOnClickListener ensures the host only allows the handoff when safe.
+                        carContext.startActivity(intent)
+                    } catch (_: ActivityNotFoundException) {
+                        // Companion is optional. Keep the supported Navigation/POI experience intact.
+                    } catch (_: SecurityException) {
+                        // Host/platform policy may reject phone activity launch; navigation remains available.
+                    }
+                }
+            )
             .build()
 
         return MessageTemplate.Builder(message)
             .setTitle(place.name)
             .setHeaderAction(Action.BACK)
             .addAction(navigate)
-            .addAction(virtualDrive)
+            .addAction(virtual)
             .build()
     }
 }
