@@ -14,11 +14,13 @@ import androidx.car.app.model.DateTimeWithZone
 import androidx.car.app.model.Template
 import androidx.car.app.navigation.NavigationManager
 import androidx.car.app.navigation.NavigationManagerCallback
+import androidx.car.app.navigation.model.Destination
 import androidx.car.app.navigation.model.Maneuver
 import androidx.car.app.navigation.model.NavigationTemplate
 import androidx.car.app.navigation.model.RoutingInfo
 import androidx.car.app.navigation.model.Step
 import androidx.car.app.navigation.model.TravelEstimate
+import androidx.car.app.navigation.model.Trip
 import androidx.core.content.ContextCompat
 import com.roviq.local.data.RoviqApi
 import com.roviq.local.data.RoviqPlace
@@ -94,6 +96,7 @@ class RoviqNavigationScreen(
     private var remainingMeters: Double? = null
     private var arrived = false
     private var listening = false
+    private var autoDriveTimer: java.util.Timer? = null
 
     private val locationListener = LocationListener { location -> onLocation(location) }
 
@@ -101,6 +104,13 @@ class RoviqNavigationScreen(
         override fun onStopNavigation() {
             teardown()
             finish()
+        }
+
+        override fun onAutoDriveEnabled() {
+            // Google's car-app review triggers this (via `adb shell dumpsys ... AUTO_DRIVE`)
+            // to verify navigation without actually driving. Advance the same state machine
+            // onLocation() would, on a timer, instead of requiring real GPS movement.
+            startAutoDrive()
         }
     }
 
@@ -122,7 +132,7 @@ class RoviqNavigationScreen(
             failed = fetched == null
             if (fetched != null) remainingMeters = fetched.distanceMeters
             invalidate()
-            if (fetched != null) startTracking()
+            if (fetched != null) { startTracking(); pushTrip() }
         }
     }
 
@@ -159,7 +169,41 @@ class RoviqNavigationScreen(
 
     private fun teardown() {
         stopTracking()
+        stopAutoDrive()
         try { navigationManager.navigationEnded() } catch (t: Throwable) {}
+    }
+
+    private fun startAutoDrive() {
+        if (autoDriveTimer != null) return
+        stopTracking()
+        val mainExecutor = ContextCompat.getMainExecutor(carContext)
+        val timer = java.util.Timer()
+        timer.schedule(object : java.util.TimerTask() {
+            override fun run() { mainExecutor.execute { advanceAutoDrive() } }
+        }, 2000L, 2500L)
+        autoDriveTimer = timer
+        navigationManager.navigationStarted()
+        pushTrip()
+    }
+
+    private fun stopAutoDrive() {
+        autoDriveTimer?.cancel()
+        autoDriveTimer = null
+    }
+
+    private fun advanceAutoDrive() {
+        val r = route ?: return
+        if (arrived) return
+        remainingMeters = 0.0
+        if (stepIndex < r.steps.size - 1) {
+            stepIndex++
+            invalidate()
+            pushTrip()
+        } else {
+            arrived = true
+            teardown()
+            invalidate()
+        }
     }
 
     private fun onLocation(location: Location) {
@@ -188,6 +232,32 @@ class RoviqNavigationScreen(
             }
         }
         invalidate()
+        pushTrip()
+    }
+
+    private fun travelEstimateFor(meters: Double, seconds: Double): TravelEstimate {
+        val eta = DateTimeWithZone.create(System.currentTimeMillis() + (seconds * 1000).toLong(), TimeZone.getDefault())
+        val unit = if (meters >= 1000) Distance.UNIT_KILOMETERS else Distance.UNIT_METERS
+        val display = if (meters >= 1000) meters / 1000.0 else meters
+        return TravelEstimate.Builder(Distance.create(display, unit), eta).build()
+    }
+
+    // Provides next-turn info to the vehicle cluster/HUD display (NF-4), separate from the
+    // RoutingInfo shown on the main car screen template.
+    private fun pushTrip() {
+        val r = route ?: return
+        val overallMeters = remainingMeters ?: r.distanceMeters
+        val overallSeconds = if (r.distanceMeters > 0) r.durationSeconds * (overallMeters / r.distanceMeters) else r.durationSeconds
+        val tripBuilder = Trip.Builder()
+            .addDestination(Destination.Builder().setName(place.name).build(), travelEstimateFor(overallMeters, overallSeconds))
+        val current = r.steps.getOrNull(stepIndex)
+        if (current != null) {
+            val stepMeters = remainingMeters ?: current.distanceMeters
+            val stepSeconds = if (current.distanceMeters > 0) current.durationSeconds * (stepMeters / current.distanceMeters) else current.durationSeconds
+            val step = Step.Builder(cueFor(current)).setManeuver(Maneuver.Builder(maneuverTypeFor(current)).build()).build()
+            tripBuilder.addStep(step, travelEstimateFor(stepMeters, stepSeconds))
+        }
+        try { navigationManager.updateTrip(tripBuilder.build()) } catch (t: Throwable) {}
     }
 
     override fun onGetTemplate(): Template {
@@ -238,15 +308,7 @@ class RoviqNavigationScreen(
 
             val meters = remainingMeters ?: r.distanceMeters
             val secondsLeft = if (r.distanceMeters > 0) r.durationSeconds * (meters / r.distanceMeters) else r.durationSeconds
-            val eta = DateTimeWithZone.create(
-                System.currentTimeMillis() + (secondsLeft * 1000).toLong(),
-                TimeZone.getDefault()
-            )
-            val distanceUnit = if (meters >= 1000) Distance.UNIT_KILOMETERS else Distance.UNIT_METERS
-            val displayDistance = if (meters >= 1000) meters / 1000.0 else meters
-            builder.setDestinationTravelEstimate(
-                TravelEstimate.Builder(Distance.create(displayDistance, distanceUnit), eta).build()
-            )
+            builder.setDestinationTravelEstimate(travelEstimateFor(meters, secondsLeft))
         }
 
         return builder.build()
