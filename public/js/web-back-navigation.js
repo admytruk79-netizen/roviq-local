@@ -12,9 +12,14 @@
     return !!el && !el.hidden;
   }
 
+  function cinematicOpen() {
+    const body = document.body;
+    return body.classList.contains('rq-wild-cinematic') || body.classList.contains('rq-virtual-playing');
+  }
+
   function isInternalState() {
     const body = document.body;
-    return body?.dataset?.navigating === 'true' || cardOpen() || discoverOpen() || body?.dataset?.state === 'wild' || body?.dataset?.state === 'explore';
+    return body?.dataset?.navigating === 'true' || cardOpen() || discoverOpen() || cinematicOpen() || body?.dataset?.state === 'wild' || body?.dataset?.state === 'explore';
   }
 
   function armGuard() {
@@ -26,6 +31,11 @@
 
   function consumeBack() {
     const body = document.body;
+
+    if (cinematicOpen()) {
+      window.ROVIQ_CINEMATIC?.cancel?.();
+      return true;
+    }
 
     if (body?.dataset?.navigating === 'true') {
       const close = document.querySelector('.rq-nav-close');
@@ -70,7 +80,7 @@
     const observer = new MutationObserver(() => {
       if (isInternalState()) armGuard();
     });
-    observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['data-state', 'data-navigating', 'hidden'] });
+    observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['data-state', 'data-navigating', 'hidden', 'class'] });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
