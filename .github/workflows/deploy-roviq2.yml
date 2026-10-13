@@ -46,3 +46,5 @@ jobs:
             --var GIT_COMMIT:"$GITHUB_SHA" \
             --var BUILD_TIME:"$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
+      - name: Verify deployed public service
+        run: node scripts/verify-deployment.mjs
