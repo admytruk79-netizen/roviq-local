@@ -39,6 +39,12 @@ jobs:
       - name: Validate Cloudflare deployment
         run: npx --yes wrangler@4.68.1 deploy --dry-run
 
+      - name: Record D1 recovery bookmark
+        run: npx --yes wrangler@4.68.1 d1 time-travel info roviq-local2
+
+      - name: Apply additive place-details migration
+        run: npx --yes wrangler@4.68.1 d1 execute roviq-local2 --remote --file=migrations/0014_place_freshness.sql
+
       - name: Deploy ROVIQ Local2 Worker and assets
         run: |
           echo "Deploying ROVIQ Local2 production build"

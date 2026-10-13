@@ -176,3 +176,7 @@ native permission wiring.
   dashboard, QR/discount redemption flow, or payments yet. They're there so
   no migration is needed once the first sponsor signs on.
 
+
+## Backend API v2
+
+See [the backend API contract](docs/BACKEND_API.md) for nearby pagination, structured verification and hours, moderator scope, account favorites, rate limits and deployment recovery checks.

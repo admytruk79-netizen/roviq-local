@@ -7,11 +7,13 @@ import * as health from './functions/api/health.js';
 import * as version from './functions/api/version.js';
 import * as geocode from './functions/api/geocode.js';
 import * as route from './functions/api/route.js';
+import * as saved from './functions/api/saved.js';
 import * as me from './functions/api/me.js';
 import * as adminQueue from './functions/api/admin/queue.js';
 import * as adminModerate from './functions/api/admin/moderate.js';
 import * as adminActivity from './functions/api/admin/activity.js';
 import * as adminPlaces from './functions/api/admin/places/index.js';
+import * as adminDetails from './functions/api/admin/places/details.js';
 import * as adminPlace from './functions/api/admin/places/[id].js';
 import * as adminAdvisories from './functions/api/admin/advisories/index.js';
 import * as adminAdvisory from './functions/api/admin/advisories/[id].js';
@@ -75,8 +77,7 @@ async function assetResponse(request, env, path) {
   return new Response(buffer.slice(start, end + 1), { status: 206, statusText: 'Partial Content', headers });
 }
 
-export default {
-  async fetch(request, env) {
+async function dispatch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '') || '/';
 
@@ -87,6 +88,7 @@ export default {
     if (path === '/api/route') return run(route, request, env);
     if (path === '/api/places') return run(places, request, env);
     if (path === '/api/advisories') return run(advisories, request, env);
+    if (path === '/api/saved') return run(saved, request, env);
     if (path === '/api/me') return run(me, request, env);
     if (path === '/api/admin/queue') return run(adminQueue, request, env);
     if (path === '/api/admin/moderate') return run(adminModerate, request, env);
@@ -99,16 +101,40 @@ export default {
     if (path === '/api/cron/stale-submissions') return run(staleSubmissions, request, env);
     if (path === '/api/cron/ai-maintenance') return run(aiMaintenance, request, env);
 
-    let match = path.match(/^\/api\/places\/(\d+)\/view$/);
+    let match = path.match(/^\/api\/saved\/(\d+)$/);
+    if (match) return run(saved, request, env, { id: match[1] });
+    match = path.match(/^\/api\/places\/(\d+)\/view$/);
     if (match) return run(placeView, request, env, { id: match[1] });
     match = path.match(/^\/api\/places\/(\d+)$/);
     if (match) return run(place, request, env, { id: match[1] });
+    match = path.match(/^\/api\/admin\/places\/(\d+)\/details$/);
+    if (match) return run(adminDetails, request, env, { id: match[1] });
     match = path.match(/^\/api\/admin\/places\/(\d+)$/);
     if (match) return run(adminPlace, request, env, { id: match[1] });
     match = path.match(/^\/api\/admin\/advisories\/(\d+)$/);
     if (match) return run(adminAdvisory, request, env, { id: match[1] });
     if (path.startsWith('/api/')) return Response.json({ success: false, error: 'not found' }, { status: 404 });
     return assetResponse(request, env, path);
+  }
+
+export default {
+  async fetch(request,env) {
+    const started=Date.now(),requestId=crypto.randomUUID(),path=new URL(request.url).pathname;
+    let response;
+    try {
+      const ip=request.headers.get('CF-Connecting-IP');
+      const limiter=path.startsWith('/api/admin/')||request.method!=='GET'?env.WRITE_RATE_LIMITER:env.PUBLIC_RATE_LIMITER;
+      if(path.startsWith('/api/')&&ip&&limiter&&!(await limiter.limit({key:ip})).success){
+        response=Response.json({success:false,error:'Too many requests',code:'rate_limited'},{status:429,headers:{'Retry-After':'60'}});
+      }else response=await dispatch(request,env);
+    }catch(error){
+      console.error('request_failed',{request_id:requestId,path,message:error instanceof Error?error.message:'unknown'});
+      response=Response.json({success:false,error:'Service temporarily unavailable'},{status:503});
+    }
+    const headers=new Headers(response.headers);headers.set('X-Request-ID',requestId);
+    if(path.startsWith('/api/'))headers.set('Cache-Control','no-store');
+    if(path.startsWith('/api/'))console.log('api_request',{request_id:requestId,path,method:request.method,status:response.status,duration_ms:Date.now()-started});
+    return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
   },
 
   async scheduled(controller, env, ctx) {
@@ -126,3 +152,4 @@ export default {
     }
   }
 };
+

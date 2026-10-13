@@ -1,36 +1,11 @@
-export async function onRequestGet({ env }) {
-  let database = false;
-  let databaseError = null;
-
-  try {
-    if (!env.DB) throw new Error('DB binding missing');
-    const row = await env.DB.prepare('SELECT 1 AS ok').first();
-    database = row?.ok === 1;
-  } catch (error) {
-    databaseError = error instanceof Error ? error.message : 'database check failed';
-  }
-
-  const checks = {
-    database,
-    mapping_provider: 'stadia-maplibre-leaflet',
-    admin_configured: Boolean(env.ADMIN_PASSCODE)
-  };
-
-  // Mapping uses Stadia Maps vector tiles rendered via MapLibre GL, mounted
-  // inside Leaflet as the outer map/marker API. Database availability is the
-  // only required backend health dependency here.
-  const healthy = checks.database;
-
-  return Response.json(
-    {
-      success: healthy,
-      service: 'roviq-local2',
-      checks,
-      ...(databaseError ? { database_error: databaseError } : {})
-    },
-    {
-      status: healthy ? 200 : 503,
-      headers: { 'cache-control': 'no-store' }
-    }
-  );
+export async function onRequestGet({env}) {
+ try {
+  const row=await env.DB.prepare('SELECT 1 AS ok').first();
+  const schema=await env.DB.prepare("SELECT COUNT(*) AS total FROM sqlite_master WHERE type='table' AND name IN ('places','place_details')").first();
+  const healthy=row?.ok===1&&schema?.total===2;
+  return Response.json({success:healthy,service:'roviq-local2',checks:{database:row?.ok===1,catalog_schema:schema?.total===2},commit:env.GIT_COMMIT||'unknown'},{status:healthy?200:503,headers:{'Cache-Control':'no-store'}});
+ } catch {
+  console.error('health_check_failed');
+  return Response.json({success:false,service:'roviq-local2',error:'Service temporarily unavailable'},{status:503,headers:{'Cache-Control':'no-store'}});
+ }
 }

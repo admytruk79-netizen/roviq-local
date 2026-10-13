@@ -1,39 +1,44 @@
+import { parseQuery, queryWhere, distanceKm, CATEGORIES, BROAD_CATEGORY } from '../../_lib/catalog-query.js';
+import { enrichPlaces } from '../../_lib/place-freshness.js';
 import { publicColumns } from '../../_lib/public-places.js';
 import { recordSubmission } from '../../_lib/moderation.js';
 import { notifyCuratorsOfSubmission } from '../../_lib/notifications.js';
 import { requireContributor } from '../../_lib/auth.js';
 
-const LEGACY_CATEGORIES = ['food', 'coffee', 'breweries', 'nature', 'culture'];
-const CATEGORIES = [...LEGACY_CATEGORIES,'markets','scenic','recreation','family','lodging','automotive','charging','services','other'];
-const STATUSES = ['pending','approved','rejected'];
-const BROAD_CATEGORY={food:'food',coffee:'coffee',breweries:'breweries',markets:'food',nature:'nature',scenic:'nature',recreation:'nature',culture:'culture',family:'culture',lodging:'culture',automotive:'culture',charging:'culture',services:'culture',other:'culture'};
 const clean=(value,max=120)=>typeof value==='string'?value.trim().slice(0,max):'';
 function marketSlug(countryCode,region,city){return[countryCode,region,city].filter(Boolean).map(v=>String(v).toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')).filter(Boolean).join('-');}
 
 export async function onRequestGet({request,env}){
-  const url=new URL(request.url),rawCategory=url.searchParams.get('category'),category=rawCategory?rawCategory.toLowerCase():null,status=url.searchParams.get('status')||'approved',countryCode=clean(url.searchParams.get('country_code'),2).toUpperCase(),city=clean(url.searchParams.get('city'),120),market=clean(url.searchParams.get('market'),180),latParam=url.searchParams.get('lat'),lngParam=url.searchParams.get('lng'),lat=latParam!==null&&latParam!==''?Number(latParam):NaN,lng=lngParam!==null&&lngParam!==''?Number(lngParam):NaN,radiusKm=Math.min(Math.max(Number(url.searchParams.get('radius_km'))||50,1),250);
-  if(status!=='approved')return Response.json({success:false,error:'Only approved places are public'},{status:400});
-  const explicitGeo=url.searchParams.has('lat')||url.searchParams.has('lng')||city||market||countryCode,params=[status]; let where='status = ? AND COALESCE(is_hidden, 0) = 0';
-  if(category&&category!=='all'){
-    if(!CATEGORIES.includes(category))return Response.json({success:false,error:`category must be one of ${CATEGORIES.join(', ')}`},{status:400});
-    where+=' AND lower(COALESCE(category_key, category)) = ?';params.push(category);
-  }
-  if(countryCode&&!Number.isFinite(lat)){where+=' AND upper(COALESCE(country_code, ?)) = ?';params.push('US',countryCode);}
-  if(city&&!Number.isFinite(lat)){where+=' AND lower(COALESCE(city, ?)) = lower(?)';params.push('Portland',city);}
-  if(market){where+=' AND COALESCE(market_slug, ?) = ?';params.push('us-or-portland',market);}
-  const hasCoords=Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180;
-  if(hasCoords){const latDelta=radiusKm/111.0,lngScale=Math.max(Math.cos(lat*Math.PI/180),0.15),lngDelta=radiusKm/(111.0*lngScale);where+=' AND lat BETWEEN ? AND ? AND lng BETWEEN ? AND ?';params.push(lat-latDelta,lat+latDelta,lng-lngDelta,lng+lngDelta);}
-  if ((latParam !== null || lngParam !== null) && !hasCoords) return Response.json({success:false,error:'valid lat and lng are required'},{status:400});
-  let results;
-  try {
-    const columns = await publicColumns(env.DB);
-    const out = await env.DB.prepare(`SELECT ${columns} FROM places WHERE ${where} ORDER BY is_drivers_pick DESC, created_at DESC LIMIT 500`).bind(...params).all();
-    results = out.results || [];
-  } catch {
+  let q;
+  try{q=parseQuery(new URL(request.url).searchParams);}catch(error){return Response.json({success:false,error:error.message},{status:400});}
+  const {where,params}=queryWhere(q);
+  try{
+    const columns=await publicColumns(env.DB);
+    const count=await env.DB.prepare(`SELECT COUNT(*) AS total FROM places WHERE ${where}`).bind(...params).first();
+    let results,total=Number(count.total);
+    if(q.hasCoords){
+      // Read bounded candidate batches before selecting nearest results. No trig SQL extension required.
+      if(total>10000)return Response.json({success:false,error:'Too many candidates. Reduce radius or add a category or market.',code:'scope_too_broad'},{status:422});
+      results=[];let lastId=0;
+      while(true){
+        const out=await env.DB.prepare(`SELECT ${columns} FROM places WHERE ${where} AND id > ? ORDER BY id LIMIT 500`).bind(...params,lastId).all();
+        const batch=out.results||[];if(!batch.length)break;
+        results.push(...batch);lastId=batch.at(-1).id;if(batch.length<500)break;
+      }
+      results=results.map(p=>({...p,distance_km:distanceKm(q.lat,q.lng,p)})).filter(p=>p.distance_km<=q.radius)
+        .sort((a,b)=>a.distance_km-b.distance_km||a.id-b.id);
+      total=results.length;results=results.slice(q.offset,q.offset+q.limit);
+    }else{
+      const out=await env.DB.prepare(`SELECT ${columns} FROM places WHERE ${where} ORDER BY is_drivers_pick DESC,id ASC LIMIT ? OFFSET ?`).bind(...params,q.limit,q.offset).all();
+      results=out.results||[];
+    }
+    results=await enrichPlaces(env.DB,results.map(p=>({...p,category_key:p.category_key||p.category})));
+    const next=q.offset+results.length;
+    return Response.json({success:true,api_version:2,scope:{country_code:q.country||null,city:q.city||null,market:q.market||null,radius_km:q.hasCoords?q.radius:null,center:q.hasCoords?{lat:q.lat,lng:q.lng}:null,source:q.hasCoords||q.city||q.country||q.market?'client':'unscoped'},pagination:{limit:q.limit,offset:q.offset,total,has_more:next<total,next_offset:next<total?next:null},places:results},{headers:{'Cache-Control':'no-store'}});
+  }catch(error){
+    console.error('catalog_query_failed',{message:error instanceof Error?error.message:'unknown'});
     return Response.json({success:false,error:'Catalog temporarily unavailable'},{status:503});
   }
-  if(hasCoords){const toRad=d=>d*Math.PI/180;results=results.map(p=>{const dLat=toRad(Number(p.lat)-lat),dLng=toRad(Number(p.lng)-lng),a=Math.sin(dLat/2)**2+Math.cos(toRad(lat))*Math.cos(toRad(Number(p.lat)))*Math.sin(dLng/2)**2,distance_km=6371*2*Math.asin(Math.sqrt(a));return{...p,category_key:p.category_key||p.category,distance_km};}).filter(p=>p.distance_km<=radiusKm).sort((a,b)=>(b.is_drivers_pick-a.is_drivers_pick)||(a.distance_km-b.distance_km));}else results=results.map(p=>({...p,category_key:p.category_key||p.category}));
-  return Response.json({success:true,scope:{country_code:countryCode||null,city:city||null,market:market||null,radius_km:hasCoords?radiusKm:null,center:hasCoords?{lat,lng}:null,source:explicitGeo?'client':'unscoped'},places:results});
 }
 
 const VERIFICATION_BY_ROLE={contributor:'verified_driver',city_curator:'trusted',regional_admin:'trusted',super_admin:'trusted'};
@@ -42,7 +47,7 @@ export async function onRequestPost({request,env}){
   const{response,actor}=await requireContributor(request,env);
   if(response)return response;
   let body;try{body=await request.json();}catch{return Response.json({success:false,error:'invalid JSON body'},{status:400});}
-  const name=clean(body.name,120),categoryKey=String(body.category||'').toLowerCase(),category=BROAD_CATEGORY[categoryKey],description=clean(body.description,800),whyStop=clean(body.why_stop,800)||description,recommendedFor=clean(body.recommended_for,240),localTip=clean(body.local_tip,300),address=clean(body.address,300),photoUrl=clean(body.photo_url,500),countryCode=clean(body.country_code,2).toUpperCase(),country=clean(body.country,120),region=clean(body.region,120),city=clean(body.city,120),locality=clean(body.locality,120),postalCode=clean(body.postal_code,32),timezone=clean(body.timezone,80),market=clean(body.market_slug,180)||marketSlug(countryCode,region,city),lat=Number(body.lat),lng=Number(body.lng);
+  const name=clean(body.name,120),categoryKey=String(body.category||'').toLowerCase(),category=BROAD_CATEGORY[categoryKey],description=clean(body.description,800),whyStop=clean(body.why_stop,800)||description,recommendedFor=clean(body.recommended_for,240),localTip=clean(body.local_tip,300),address=clean(body.address,300),photoUrl=clean(body.photo_url,500),countryCode=clean(body.country_code,2).toUpperCase(),country=clean(body.country,120),region=clean(body.region,120),city=clean(body.city,120),locality=clean(body.locality,120),postalCode=clean(body.postal_code,32),timezone=clean(body.timezone,80),market=clean(body.market_slug,180)||marketSlug(countryCode,region,city),lat=body.lat===null||body.lat===undefined||body.lat===''?NaN:Number(body.lat),lng=body.lng===null||body.lng===undefined||body.lng===''?NaN:Number(body.lng);
   const submittedBy=actor.handle;
   if(!name)return Response.json({success:false,error:'name is required'},{status:400});
   if(!CATEGORIES.includes(categoryKey)||!category)return Response.json({success:false,error:`category must be one of ${CATEGORIES.join(', ')}`},{status:400});

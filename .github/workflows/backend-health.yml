@@ -1,0 +1,23 @@
+name: Backend health monitor
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/15 * * * *'
+permissions:
+  contents: read
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Check production database and schema health
+        run: |
+          node --input-type=module <<'JS'
+          const response=await fetch('https://roviq-local2.admytruk79.workers.dev/api/health',{signal:AbortSignal.timeout(15000)});
+          const health=await response.json();
+          if(!response.ok||!health.success||!health.checks.database||!health.checks.catalog_schema)throw Error('Production backend health check failed');
+          console.log('Production database and catalog schema healthy');
+          JS

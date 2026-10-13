@@ -44,9 +44,9 @@ export async function authenticateModerator(request, env) {
     return { authenticated: true, legacy: true, contributorId: null, handle: 'admin', role: 'super_admin', assignments: [] };
   }
 
-  await ensureCuratorAuthSchema(env);
   const token = bearerToken(request);
-  if (!token) return null;
+  if (!token || token.length > 256) return null;
+  await ensureCuratorAuthSchema(env);
   const tokenHash = await sha256(token);
   const user = await env.DB.prepare(`
     SELECT c.id, c.handle, c.display_name, c.email, c.role
@@ -76,7 +76,7 @@ export async function authenticateModerator(request, env) {
   };
 }
 
-export async function requireModerator(request, env, allowedRoles = ['curator','regional_admin','super_admin']) {
+export async function requireModerator(request, env, allowedRoles = ['city_curator','curator','regional_admin','super_admin']) {
   const actor = await authenticateModerator(request, env);
   if (!actor) return { response: unauthorized(), actor: null };
   if (!allowedRoles.includes(actor.role)) return { response: forbidden('insufficient role'), actor };
@@ -98,14 +98,14 @@ export function canModeratePlace(actor, place) {
   if (!assignments.length) return false;
   const eq = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
   return assignments.some(a => {
-    if (a.market_slug && eq(a.market_slug, place.market_slug)) return true;
-    if (a.city && eq(a.city, place.city) && (!a.region || eq(a.region, place.region)) && (!a.country_code || eq(a.country_code, place.country_code))) return true;
-    if (a.region && eq(a.region, place.region) && (!a.country_code || eq(a.country_code, place.country_code))) return true;
-    if (a.country_code && eq(a.country_code, place.country_code) && !a.region && !a.city && !a.market_slug) return true;
-    return false;
+    // Every assigned field is a restriction; a city assignment never broadens to its region.
+    const fields=['market_slug','city','region','country_code'];
+    const specified=fields.filter(key=>a[key]);
+    return specified.length>0 && specified.every(key=>eq(a[key],place[key]));
   });
 }
 
 export async function hashCuratorToken(token) {
   return sha256(token);
 }
+

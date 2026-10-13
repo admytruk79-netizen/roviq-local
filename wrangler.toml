@@ -21,3 +21,20 @@ binding = "AI"
 # Runtime variables/secrets are configured in Cloudflare for this Worker:
 #   ADMIN_PASSCODE      shared curator passcode for the /admin tools
 #   CRON_SECRET         optional bearer secret for manual cron endpoint calls
+
+
+[observability]
+enabled = true
+head_sampling_rate = 0.1
+
+[[unsafe.bindings]]
+name = "PUBLIC_RATE_LIMITER"
+type = "ratelimit"
+namespace_id = "1001"
+simple = { limit = 300, period = 60 }
+
+[[unsafe.bindings]]
+name = "WRITE_RATE_LIMITER"
+type = "ratelimit"
+namespace_id = "1002"
+simple = { limit = 30, period = 60 }
