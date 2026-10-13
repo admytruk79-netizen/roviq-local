@@ -28,7 +28,9 @@ export function getCurrentPosition({fresh=false}={}){
       {enableHighAccuracy:true,timeout:12000,maximumAge:30000}
     );
   });
-  return positionPromise;
+  const pending=positionPromise;
+  pending.then(scope=>{if(!scope&&positionPromise===pending)positionPromise=null;});
+  return pending;
 }
 
 export async function loadApprovedPlaces(location=null){
@@ -44,12 +46,29 @@ export async function loadApprovedPlaces(location=null){
   params.set('lng',String(scope.lng));
   params.set('radius_km',String(scope.radius_km||80));
   updateLocationLabel(scope);
-  const r=await fetch(`/api/places?${params.toString()}`,{cache:'no-store'});
-  if(!r.ok)throw new Error(`places ${r.status}`);
-  const d=await r.json();
-  const places=Array.isArray(d?.places)?d.places:[];
-  window.dispatchEvent(new CustomEvent('roviq:places-loaded',{detail:{count:places.length,location:scope}}));
-  return places;
+  const cacheKey='roviq_public_places';
+  const cacheScope=params.toString();
+  try {
+    const r=await fetch(`/api/places?${params.toString()}`,{cache:'no-store'});
+    if(!r.ok){const error=new Error(`places ${r.status}`);error.status=r.status;throw error;}
+    const d=await r.json();
+    if(!d.success||!Array.isArray(d.places))throw new Error('Invalid catalog response');
+    const places=d.places;
+    try{localStorage.setItem(cacheKey,JSON.stringify({scope:cacheScope,savedAt:Date.now(),places}));}catch{}
+    window.dispatchEvent(new CustomEvent('roviq:places-loaded',{detail:{count:places.length,location:scope,offline:false}}));
+    return places;
+  }catch(error){
+    if(error.status&&error.status<500)throw error;
+    try{
+      const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');
+      if(cached&&cached.scope===cacheScope&&Date.now()-cached.savedAt<7*24*60*60*1000&&Array.isArray(cached.places)){
+        const places=cached.places;places.offline=true;places.savedAt=cached.savedAt;
+        window.dispatchEvent(new CustomEvent('roviq:places-loaded',{detail:{count:places.length,location:scope,offline:true}}));
+        return places;
+      }
+    }catch{}
+    throw error;
+  }
 }
 export function savedIds(){try{return new Set(JSON.parse(localStorage.getItem('roviq_saved')||'[]').map(String))}catch{return new Set()}}
 export function toggleSaved(id){const s=savedIds(),k=String(id);s.has(k)?s.delete(k):s.add(k);localStorage.setItem('roviq_saved',JSON.stringify([...s]));return s.has(k)}

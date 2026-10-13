@@ -10,6 +10,10 @@ later. See the original build brief for full product context.
 > what AI is and is not allowed to do, and what must never be destroyed. Read
 > it before making product or design decisions in this repo.
 
+## Current phone and car integration
+
+The active frontend is MapLibre (`public/js/app-v3.js`). Android already has a WebView phone wrapper and native Android Auto POI screens. An iOS wrapper and CarPlay scene starter now live in `ios/`. See [native readiness](docs/NATIVE_READINESS.md) for the current behavior and validation requirements. The older provisioning/TWA walkthrough below describes earlier setup and should not be treated as the current native implementation.
+
 ## Stack
 
 - **Frontend**: static single-page app — plain HTML/CSS/JS, no build step —
@@ -171,3 +175,4 @@ native permission wiring.
   `schema.sql`) but are deliberately unused and empty for v1 — no shop
   dashboard, QR/discount redemption flow, or payments yet. They're there so
   no migration is needed once the first sponsor signs on.
+

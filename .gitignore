@@ -2,3 +2,11 @@ node_modules/
 .wrangler/
 .dev.vars
 .DS_Store
+
+
+# Generated native outputs
+ios/*.xcodeproj/
+ios/build/
+android/.gradle/
+android/**/build/
+android/local.properties

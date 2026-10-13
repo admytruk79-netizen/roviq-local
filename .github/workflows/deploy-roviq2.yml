@@ -25,10 +25,10 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
-      - name: Verify source build
-        run: node -e "console.log('ROVIQ Local2 source checkout ready')"
+      - name: Verify public catalog and location recovery
+        run: npm test
 
       - name: Verify Cloudflare credentials
         shell: bash
@@ -45,3 +45,4 @@ jobs:
           npx --yes wrangler@4.68.1 deploy \
             --var GIT_COMMIT:"$GITHUB_SHA" \
             --var BUILD_TIME:"$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+

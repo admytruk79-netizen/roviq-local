@@ -1,0 +1,21 @@
+name: iOS unsigned build
+on:
+  workflow_dispatch:
+  push:
+    paths: ['ios/**', '.github/workflows/ios-build.yml']
+  pull_request:
+    paths: ['ios/**', '.github/workflows/ios-build.yml']
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        working-directory: ios
+        run: xcodegen generate
+      - name: Build simulator application
+        working-directory: ios
+        run: xcodebuild -project RoviqLocal.xcodeproj -scheme RoviqLocal -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build

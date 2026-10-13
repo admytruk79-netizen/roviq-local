@@ -1,6 +1,6 @@
-const CACHE = 'roviq-shell-v1';
+const CACHE = 'roviq-shell-v2';
 
-self.addEventListener('install', () => { self.skipWaiting(); });
+self.addEventListener('install', event => { event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(['/', '/css/discovery-recovery.css'])).then(() => self.skipWaiting())); });
 
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
@@ -15,13 +15,15 @@ self.addEventListener('activate', event => {
 // last-known-good cached copy when the network is unreachable.
 self.addEventListener('fetch', event => {
   const req = event.request;
+  const path = new URL(req.url).pathname;
+  if (path.startsWith('/api/') || path.startsWith('/admin/') || path.startsWith('/submit')) return;
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
   event.respondWith((async () => {
     try {
       const res = await fetch(req);
       if (res && res.ok) {
         const cache = await caches.open(CACHE);
-        cache.put(req, res.clone());
+        await cache.put(req, res.clone());
       }
       return res;
     } catch {
@@ -31,3 +33,4 @@ self.addEventListener('fetch', event => {
     }
   })());
 });
+

@@ -1,5 +1,8 @@
 package com.roviq.local
 
+import android.content.Intent
+import android.net.Uri
+import android.webkit.WebResourceRequest
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
@@ -37,13 +40,29 @@ class MainActivity : AppCompatActivity() {
         webView.settings.domStorageEnabled = true
         webView.settings.databaseEnabled = true
         webView.settings.setGeolocationEnabled(true)
-        webView.webViewClient = WebViewClient()
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                val uri = request.url
+                if (uri.scheme == "https" && uri.host == Uri.parse(BuildConfig.BASE_URL).host) return false
+                if (uri.scheme in listOf("https", "geo", "tel")) {
+                    try { startActivity(Intent(Intent.ACTION_VIEW, uri)) }
+                    catch (_: android.content.ActivityNotFoundException) {
+                        android.widget.Toast.makeText(this@MainActivity, "No app is available to open this link", android.widget.Toast.LENGTH_LONG).show()
+                    }
+                }
+                return true
+            }
+        }
         webView.webChromeClient = object : WebChromeClient() {
             override fun onGeolocationPermissionsShowPrompt(
                 origin: String?,
                 callback: GeolocationPermissions.Callback?
             ) {
                 if (origin == null || callback == null) return
+                if (Uri.parse(origin).host != Uri.parse(BuildConfig.BASE_URL).host || Uri.parse(origin).scheme != "https") {
+                    callback.invoke(origin, false, false)
+                    return
+                }
                 val fine = ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.ACCESS_FINE_LOCATION)
                 val coarse = ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.ACCESS_COARSE_LOCATION)
                 if (fine == PackageManager.PERMISSION_GRANTED || coarse == PackageManager.PERMISSION_GRANTED) {
