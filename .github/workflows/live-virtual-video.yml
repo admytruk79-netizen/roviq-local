@@ -11,6 +11,12 @@ permissions:
 jobs:
   real-video:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    strategy:
+      fail-fast: false
+      matrix:
+        theme: [day, night]
+    env:
+      ROVIQ_TEST_THEME: ${{ matrix.theme }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -19,10 +25,10 @@ jobs:
         with:
           node-version: 24
       - run: npm install --no-save --package-lock=false playwright@1.56.1
-      - name: Play deployed night video through active service worker
+      - name: Play deployed video through active service worker
         run: node tests/live-virtual-video.browser.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: live-night-video
+          name: live-${{ matrix.theme }}-video
           path: test-artifacts/
