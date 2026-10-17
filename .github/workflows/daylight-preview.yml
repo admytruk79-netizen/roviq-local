@@ -1,0 +1,29 @@
+name: Daylight arrival preview
+on:
+  push:
+    branches: [codex/daylight-arrival-preview]
+    paths: ['.github/workflows/daylight-preview.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install video tools
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Inspect original arrival
+        run: |
+          mkdir -p preview
+          ffprobe -v error -show_entries stream=width,height,codec_name:format=duration -of json public/assets/wild/roviq_wild_urban_night_compatible.mp4
+          ffmpeg -hide_banner -loglevel error -i public/assets/wild/roviq_wild_urban_night_compatible.mp4 -vf "fps=1/2,scale=360:-2,tile=4x1" -frames:v 1 -q:v 3 preview/original-contact.jpg
+          echo ROVIQ_CONTACT_BEGIN
+          base64 -w0 preview/original-contact.jpg
+          echo
+          echo ROVIQ_CONTACT_END
+      - uses: actions/upload-artifact@v4
+        with:
+          name: daylight-arrival-preview
+          path: preview/
