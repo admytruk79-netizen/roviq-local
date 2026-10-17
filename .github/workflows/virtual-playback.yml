@@ -18,16 +18,21 @@ jobs:
           node-version: 24
       - run: npm install --no-save --package-lock=false playwright@1.56.1
       - run: npx playwright install --with-deps chromium
+      - name: Install video test encoder
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Confirm the test catches the previous playback bug
         shell: bash
         run: |
           cp public/js/wild-cinematic.js /tmp/fixed-cinematic.js
           git show 6cd734598c0a99b514fbd79f165bc7bc5e795909:public/js/wild-cinematic.js > public/js/wild-cinematic.js
-          if node tests/virtual-playback.browser.cjs; then
+          ffmpeg -version > /dev/null
+          if node tests/virtual-playback.browser.cjs > /tmp/playback-baseline.log 2>&1; then
             cp /tmp/fixed-cinematic.js public/js/wild-cinematic.js
             echo 'Expected previous playback implementation to fail the regression check'
             exit 1
           fi
+          cat /tmp/playback-baseline.log
+          grep -q 'AssertionError' /tmp/playback-baseline.log
           cp /tmp/fixed-cinematic.js public/js/wild-cinematic.js
       - name: Generate test video and check mobile playback
         run: node tests/virtual-playback.browser.cjs
