@@ -13,7 +13,7 @@
     "db:migrate:platform:remote": "wrangler d1 execute roviq-local2 --remote --file=./migrations/0004_moderation_network.sql && wrangler d1 execute roviq-local2 --remote --file=./migrations/0005_commercial_trust_layers.sql && wrangler d1 execute roviq-local2 --remote --file=./migrations/0006_taxonomy_and_advisories.sql && wrangler d1 execute roviq-local2 --remote --file=./migrations/0007_driver_trust_fields.sql",
     "db:seed:remote": "wrangler d1 execute roviq-local2 --remote --file=./seed.sql",
     "db:bootstrap:remote": "npm run db:migrate:remote && npm run db:migrate:platform:remote && npm run db:seed:remote",
-    "test": "node tests/public-catalog.test.mjs && node tests/location-recovery.test.mjs && node tests/backend-details.test.mjs && node tests/account-api.test.mjs"
+    "test": "node tests/public-catalog.test.mjs && node tests/location-recovery.test.mjs && node tests/backend-details.test.mjs && node tests/account-api.test.mjs && node tests/service-worker.test.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.68.1"
