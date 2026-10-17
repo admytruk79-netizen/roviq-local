@@ -9,9 +9,61 @@ function resumeMap(){document.body.classList.remove('rq-virtual-playing');const 
 function setSource(v,url){if(v.dataset.src===url)return;v.dataset.src=url;v.innerHTML='<source src="'+url+'" type="video/mp4">';v.load()}
 async function warm(url=VIDEOS.day){const s=ensureStage(),v=s.querySelector('.rq-wc-video');try{setSource(v,url);if(v.readyState<3)await Promise.race([new Promise(r=>v.addEventListener('canplay',r,{once:true})),sleep(2500)])}catch{}}
 async function fallback(s){s.classList.add('fallback','scan');await sleep(450);s.className='fallback chase';await sleep(650);s.className='fallback locked';await sleep(500);s.className='fallback release';await sleep(300)}
-async function playClip(url,{title,copyTitle,copyText,holdMs=0}={}){const s=ensureStage(),v=s.querySelector('.rq-wc-video'),copy=s.querySelector('.rq-wc-video-lock'),skip=s.querySelector('.rq-wc-skip');setSource(v,url);document.body.classList.add('rq-wild-cinematic');s.className='video';s.querySelector('#rq-wc-title').textContent=title||'VIRTUAL DRIVE';s.querySelector('#rq-wc-copy-title').textContent=copyTitle||'ROUTE READY';copy.querySelector('span').textContent=copyText||document.querySelector('#rq-name')?.textContent?.trim()||'Simulating the journey';let skipped=false,skipResolve;const skipSignal=new Promise(r=>skipResolve=r);const skipNow=()=>{if(skipped)return;skipped=true;try{v.pause()}catch{}skipResolve()};skip.onclick=skipNow;try{v.currentTime=0;v.muted=false;const playPromise=v.play();if(playPromise)await Promise.race([playPromise,skipSignal,new Promise((_,rej)=>setTimeout(()=>rej(new Error('play stalled')),4000))]);await new Promise(resolve=>{let settled=false;const done=()=>{if(settled)return;settled=true;resolve()};v.addEventListener('ended',done,{once:true});const tick=()=>{if(settled)return;if(skipped)return done();const d=Number.isFinite(v.duration)&&v.duration>0?v.duration:8;const left=d-v.currentTime;s.classList.toggle('video-lock',left<3.5);requestAnimationFrame(tick)};tick();setTimeout(done,15000)});try{v.pause()}catch{}navigator.vibrate?.([18,45,32]);if(holdMs&&!skipped){s.classList.add('video-release');await Promise.race([sleep(holdMs),skipSignal])}}catch(e){if(!skipped){try{v.muted=true;await Promise.race([v.play(),skipSignal,new Promise((_,rej)=>setTimeout(()=>rej(new Error('muted play stalled')),3000))]);const unlock=document.createElement('button');unlock.className='rq-wc-audio-unlock';unlock.textContent='SOUND ON';unlock.onclick=()=>{v.muted=false;unlock.remove()};s.appendChild(unlock);if(holdMs&&!skipped)await Promise.race([sleep(holdMs),skipSignal]);unlock.remove()}catch{if(!skipped)await fallback(s)}}}return !skipped}
+function withTimeout(promise,ms){
+ let timer;return Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Video playback timed out')),ms)})]).finally(()=>clearTimeout(timer));
+}
+function waitForVideoEnd(video,stage,skipSignal){
+ return new Promise((resolve,reject)=>{
+  let settled=false,timer,lastTime=video.currentTime,lastProgress=Date.now();
+  const finish=error=>{if(settled)return;settled=true;clearInterval(timer);video.removeEventListener('ended',ended);video.removeEventListener('error',failed);error?reject(error):resolve();};
+  const ended=()=>finish(),failed=()=>finish(new Error('Video could not load'));
+  video.addEventListener('ended',ended);video.addEventListener('error',failed);
+  skipSignal.then(ended);
+  timer=setInterval(()=>{
+   if(video.ended)return ended();
+   if(video.error)return failed();
+   if(video.currentTime>lastTime){lastTime=video.currentTime;lastProgress=Date.now();stage.dataset.playback='playing';}
+   if(Number.isFinite(video.duration))stage.classList.toggle('video-lock',video.duration-video.currentTime<3.5);
+   if(Date.now()-lastProgress>15000)finish(new Error('Video stopped progressing'));
+  },150);
+  if(video.ended)ended();
+ });
+}
+async function playClip(url,{title,copyTitle,copyText,holdMs=0}={}){
+ const stage=ensureStage(),video=stage.querySelector('.rq-wc-video'),skip=stage.querySelector('.rq-wc-skip');
+ setSource(video,url);document.body.classList.add('rq-wild-cinematic');stage.className='video';stage.dataset.playback='loading';
+ stage.querySelector('#rq-wc-title').textContent=title||'VIRTUAL DRIVE';stage.querySelector('#rq-wc-copy-title').textContent=copyTitle||'ROUTE READY';
+ stage.querySelector('.rq-wc-video-lock span').textContent=copyText||document.querySelector('#rq-name')?.textContent?.trim()||'Simulating the journey';
+ let skipped=false,resolveSkip,unlock;
+ const skipSignal=new Promise(resolve=>resolveSkip=resolve);
+ skip.onclick=()=>{if(skipped)return;skipped=true;video.pause();resolveSkip();};
+ try{
+  video.currentTime=0;video.muted=false;
+  try{await withTimeout(Promise.race([video.play(),skipSignal]),4000);}
+  catch(error){
+   if(skipped)return !cancelled;
+   video.muted=true;
+   await withTimeout(Promise.race([video.play(),skipSignal]),4000);
+   unlock=document.createElement('button');unlock.className='rq-wc-audio-unlock';unlock.textContent='Sound on';
+   unlock.onclick=()=>{video.muted=false;unlock.remove();};stage.appendChild(unlock);
+  }
+  // Audio permission changes must not shorten or skip the video.
+  if(!skipped)await waitForVideoEnd(video,stage,skipSignal);
+  if(!skipped&&holdMs)await Promise.race([sleep(holdMs),skipSignal]);
+  return !cancelled;
+ }catch(error){
+  if(!skipped){stage.dataset.playback='fallback';stage.querySelector('#rq-wc-copy-title').textContent='VIRTUAL DRIVE';await fallback(stage);}
+  return !cancelled;
+ }finally{
+  video.pause();unlock?.remove();skip.onclick=null;delete stage.dataset.playback;
+ }
+}
 function isDayTheme(){return document.documentElement.dataset.theme==='day'}
-async function playSequence(){if(running)return false;running=true;cancelled=false;pauseMap();const ok=await playClip(isDayTheme()?VIDEOS.day:VIDEOS.night,{holdMs:isDayTheme()?400:5000});document.body.classList.remove('rq-wild-cinematic');document.querySelector('#rq-wild-cinema').className='';resumeMap();running=false;return ok}
+async function playSequence(){
+ if(running)return false;running=true;cancelled=false;pauseMap();
+ try{return await playClip(isDayTheme()?VIDEOS.day:VIDEOS.night,{holdMs:isDayTheme()?400:500});}
+ finally{document.body.classList.remove('rq-wild-cinematic');ensureStage().className='';resumeMap();running=false;}
+}
 function looksLikeVideo(value){return /\.(mp4|webm|mov)(?:[?#].*)?$/i.test(String(value||''))}
 async function playArrival(source,name){const s=ensureStage(),photo=s.querySelector('.rq-wc-arrival-photo'),v=s.querySelector('.rq-wc-video');pauseMap();document.body.classList.add('rq-wild-cinematic');if(looksLikeVideo(source)){s.querySelector('#rq-wc-title').textContent='ARRIVAL';s.querySelector('#rq-wc-copy-title').textContent='ARRIVING';s.querySelector('.rq-wc-video-lock span').textContent=name||'Destination';await playClip(source,{title:'ARRIVAL',copyTitle:'ARRIVED',copyText:name||'Destination',holdMs:2200});document.body.classList.remove('rq-wild-cinematic');s.className='';resumeMap();return}
   photo.style.backgroundImage=source?`url("${String(source).replace(/"/g,'')}")`:'linear-gradient(135deg,#10252b,#5a4326)';s.className='photo-reveal';s.querySelector('#rq-wc-copy-title').textContent='ARRIVED';s.querySelector('.rq-wc-copy span').textContent=name||'';navigator.vibrate?.([20,40,20,60]);await sleep(2500);if(!cancelled){s.className='photo-reveal parked';s.querySelector('#rq-wc-copy-title').textContent='PARKED';navigator.vibrate?.(35);await sleep(3000)}document.body.classList.remove('rq-wild-cinematic');s.className='';resumeMap()}

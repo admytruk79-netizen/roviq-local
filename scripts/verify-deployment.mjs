@@ -22,3 +22,11 @@ assert.equal((await fetch(base+'/api/saved')).status,401);
 assert.equal((await fetch(base+'/api/places?limit=0')).status,400);
 const first=await(await fetch(base+'/api/places?lat=45.52&lng=-122.67&radius_km=80&limit=2')).json();assert(first.places.length<=2);assert.equal(first.pagination.limit,2);
 console.log('Verified pagination, freshness, schema health, request IDs and account-gated favorites.');
+
+for(const asset of ['roviq_virtual_day_drive.mp4','roviq_wild_urban_night_compatible.mp4']){
+ const media=await fetch(base+'/assets/wild/'+asset,{headers:{Range:'bytes=0-31'},signal:AbortSignal.timeout(20000)});
+ assert([200,206].includes(media.status),'Cinematic asset unavailable: '+asset);
+ assert((media.headers.get('Content-Type')||'').includes('video/'));
+ const bytes=new Uint8Array(await media.arrayBuffer());assert(bytes.length>=12);assert.equal(new TextDecoder().decode(bytes.slice(4,8)),'ftyp');
+}
+console.log('Verified day/night cinematic MP4 assets and byte-range playback responses.');

@@ -1,0 +1,38 @@
+name: Virtual drive playback
+on:
+  workflow_dispatch:
+  push:
+    paths: ['public/js/wild-cinematic.js', 'public/js/virtual-cinematic-bridge.js', 'public/css/wild-cinematic.css', 'tests/virtual-playback.browser.cjs', '.github/workflows/virtual-playback.yml']
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --no-save --package-lock=false playwright@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - name: Confirm the test catches the previous playback bug
+        shell: bash
+        run: |
+          cp public/js/wild-cinematic.js /tmp/fixed-cinematic.js
+          git show 6cd734598c0a99b514fbd79f165bc7bc5e795909:public/js/wild-cinematic.js > public/js/wild-cinematic.js
+          if node tests/virtual-playback.browser.cjs; then
+            cp /tmp/fixed-cinematic.js public/js/wild-cinematic.js
+            echo 'Expected previous playback implementation to fail the regression check'
+            exit 1
+          fi
+          cp /tmp/fixed-cinematic.js public/js/wild-cinematic.js
+      - name: Generate test video and check mobile playback
+        run: node tests/virtual-playback.browser.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: virtual-playback-screenshots
+          path: test-artifacts/
