@@ -25,10 +25,8 @@ jobs:
           echo ROVIQ_CONTACT_END
       - name: Check free hosted video editors
         run: python3 scripts/probe-free-video.py
-      - name: Try free public video generator
-        run: |
-          pip install --quiet gradio_client
-          python3 scripts/generate-free-daylight.py
+      - name: Check another free generator
+        run: python3 scripts/probe-ltx.py
       - uses: actions/upload-artifact@v4
         with:
           name: daylight-arrival-preview
