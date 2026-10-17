@@ -1,5 +1,7 @@
 name: Live virtual video verification
 on:
+  push:
+    paths: ['tests/live-virtual-video.browser.cjs', '.github/workflows/live-virtual-video.yml']
   workflow_dispatch:
   workflow_run:
     workflows: ['Deploy ROVIQ Local2']
@@ -8,7 +10,7 @@ permissions:
   contents: read
 jobs:
   real-video:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
