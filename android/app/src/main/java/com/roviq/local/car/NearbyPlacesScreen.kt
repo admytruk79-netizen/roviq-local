@@ -147,7 +147,7 @@ class NearbyPlacesScreen(
                     .build()
 
                 val badge = if (place.isRoviqPick()) "★ ROVIQ PICK" else place.category.uppercase()
-                val primary = place.distanceKm?.let { "$badge · %.1f km".format(it) } ?: badge
+                val primary = place.distanceKm?.let { "$badge · ${formatMiles(it)}" } ?: badge
                 val reason = place.description
                     ?.replace(Regex("\\s+"), " ")
                     ?.trim()
@@ -174,5 +174,10 @@ class NearbyPlacesScreen(
 
     private fun compactAddress(address: String): String =
         address.split(',').map { it.trim() }.filter { it.isNotBlank() }.take(2).joinToString(", ")
+
+    private fun formatMiles(km: Double): String {
+        val mi = km * 0.621371
+        return if (mi < 10) "%.1f mi".format(mi) else "${Math.round(mi)} mi"
+    }
 }
 
